@@ -14,8 +14,8 @@ jobs:
     name: Detect changes and set job outputs based on filters
     runs-on: ubuntu-latest
     outputs:
-      flows: ${{ steps.filter.outputs.changes }}
       run_or_skip_flows: ${{ steps.filter.outputs.flows }}
+      # flows: ${{ steps.filter.outputs.changes }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -27,17 +27,22 @@ jobs:
           filters: |
             flows:
               - added|modified: 'flows/**.py'
-
+      - id: set-matrix
+        run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
 
   deploy_flows:
     name: Deploy flows to Prefect backend
     needs: changes
     if: ${{ needs.changes.outputs.run_or_skip_flows == 'true' }}
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     strategy:
       matrix:
-        flow: ${{ fromJSON(needs.changes.outputs.flows) }}
+        flows: ${{ fromJson(needs.changes.outputs.matrix) }}
+        # flow: ${{ fromJSON(needs.changes.outputs.flows) }}
     steps:
+
       - name: Checkout
         uses: actions/checkout@v3
       - name: Set up Python 3.9
