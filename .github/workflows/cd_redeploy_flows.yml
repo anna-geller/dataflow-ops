@@ -45,7 +45,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     strategy:
       matrix:
-        flows: ${{ fromJson(needs.changes.outputs.matrix) }}
+        flows: ${{ fromJson(needs.list-flows.outputs.matrix) }}
         # flow: ${{ fromJSON(needs.changes.outputs.flows) }}
     steps:
 
@@ -70,4 +70,4 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
       - name: Create deployment
-        run: prefect deployment create ${{ matrix.flow }}
+        run: prefect deployment create ${{ matrix.flows }}
