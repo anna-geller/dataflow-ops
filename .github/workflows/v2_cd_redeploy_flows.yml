@@ -22,7 +22,7 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: filter
         with:
-          list-files: shell
+          list-files: csv
           filters: |
             python:
               - added|modified: 'flows/*.py'
