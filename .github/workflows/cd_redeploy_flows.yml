@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       flows: ${{ steps.filter.outputs.flows }}
+      code_dependencies: ${{ steps.filter.outputs.code_dependencies }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -25,11 +26,14 @@ jobs:
           filters: |
             flows:
               - 'flows/**'
+            code_dependencies:
+              - 'prefect_dataops/**'
+              - 'requirements.txt'
 
   flows:
     name: Deploy flows to Prefect backend
     needs: changes
-    if: steps.changes.outputs.src == 'true'
+    if: ${{ needs.changes.outputs.flows == ["flows"] }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -57,3 +61,13 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Create deployment
         run: prefect deployment create ${{ matrix.flows }}
+  code_dependencies:
+    name: Build and push container image
+    needs: changes
+    if: ${{ needs.changes.outputs.code_dependencies == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: End workflow
+        run: echo Success
