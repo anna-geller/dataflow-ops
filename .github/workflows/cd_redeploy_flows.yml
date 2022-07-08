@@ -3,8 +3,7 @@ name: Deploy flows to the Prefect backend
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:
+      - master
 
 env:
   PREFECT_WORKSPACE: "annaprefect/production"
@@ -58,4 +57,4 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
       - name: Create deployment
-        run: prefect deployment create ${{ matrix.flows }}
+        run: prefect deployment create ${{ matrix.flow }}
