@@ -10,6 +10,14 @@ env:
   AWS_REGION: us-east-1
 
 jobs:
+  list-flows:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: set-matrix
+        run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
   changes:
     name: Detect changes and set job outputs based on filters
     runs-on: ubuntu-latest
@@ -27,12 +35,10 @@ jobs:
           filters: |
             flows:
               - added|modified: 'flows/**.py'
-      - id: set-matrix
-        run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
 
   deploy_flows:
     name: Deploy flows to Prefect backend
-    needs: changes
+    needs: [list-flows, changes]
     if: ${{ needs.changes.outputs.run_or_skip_flows == 'true' }}
     runs-on: ubuntu-latest
     outputs:
