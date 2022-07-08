@@ -1,0 +1,60 @@
+name: Deploy flows to S3, code dependencies to ECR and agent to AWS ECS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  PREFECT_WORKSPACE: "annaprefect/production"
+
+jobs:
+  changes:
+    name: Detect changes and set job outputs based on filters
+    runs-on: ubuntu-latest
+    outputs:
+      flows: ${{ steps.filter.outputs.flows }}
+      code_dependencies: ${{ steps.filter.outputs.code_dependencies }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Detect changes in flows and code deps
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            flows:
+              - 'flows/**'
+
+  flows:
+    name: Deploy flows to Prefect backend
+    needs: changes
+    if: ${{ needs.changes.outputs.flows == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        flows: ${{ fromJSON(needs.changes.outputs.flows) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.9
+      - name: Python dependencies
+        run: |
+          pip install s3fs
+          pip install -U "prefect>=2.0b"
+      - name: Login to Prefect Cloud 2.0
+        run: prefect cloud login --key ${{ secrets.PREFECT_API_KEY}} --workspace ${{ env.PREFECT_WORKSPACE }}
+      - name: Validate Prefect version
+        run: prefect version
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Create deployment
+        run: prefect deployment create ${{ matrix.flows }}
