@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        flows: ${{ fromJson(steps.flows-list.outputs.FLOWS_LIST) }}
+        flows: ${{ steps.filter.outputs.python_files }}
 #    outputs:
 #      run_or_skip_flows: ${{ steps.filter.outputs.flows }}
       # flows: ${{ steps.filter.outputs.changes }}
