@@ -13,32 +13,35 @@ jobs:
   changes:
     name: Detect changes and set job outputs based on filters
     runs-on: ubuntu-latest
+    outputs:
+      prefectflows: ${{ steps.filter.outputs.changes }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
         id: filter
         with:
-          list-files: shell
+          list-files: csv
           filters: |
             python:
               - added|modified: 'flows/*.py'
       - name: List flows
         if: ${{ steps.filter.outputs.python == 'true' }}
         id: flows-list
-        run: echo "::set-output name=FLOWS_LIST::$(${{ steps.filter.outputs.python_files }} | jq -R -s -c 'split("\n")[:-1]')"
+        run: echo '::set-output name=FLOWS_LIST::${{ steps.filter.outputs.python_files }}'
       - name: Get flows
         run: echo "The selected flows are ${{ steps.flows-list.outputs.FLOWS_LIST }}"
-#               - id: set-matrix
-#               run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
-#        run: echo "The selected flows are ${{ steps.flows-list.outputs.FLOWS_LIST }}"
+        #               - id: set-matrix
+        #               run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
+        #        run: echo "The selected flows are ${{ steps.flows-list.outputs.FLOWS_LIST }}"
         # $(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')
   deploy:
     needs: changes
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        flows: ${{ fromJson(needs.changes.outputs.FLOWS_LIST) }}
+        flows: ${{ fromJson(needs.changes.outputs.prefectflows) }}
+#        flows: ${{ fromJson(needs.changes.outputs.prefectflows_files) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
