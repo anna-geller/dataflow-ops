@@ -25,12 +25,14 @@ jobs:
           filters: |
             python:
               - added|modified: 'flows/*.py'
-      - name: List flows
-        if: ${{ steps.filter.outputs.python == 'true' }}
-        id: flows-list
-        run: echo '::set-output name=FLOWS_LIST::${{ steps.filter.outputs.python_files }}'
-      - name: Get flows
-        run: echo "The selected flows are ${{ steps.flows-list.outputs.FLOWS_LIST }}"
+#      - name: List flows
+#        if: ${{ steps.filter.outputs.python == 'true' }}
+#        id: flows-list
+#        run: echo '::set-output name=FLOWS_LIST::${{ steps.filter.outputs.python_files }}'
+#      - name: Get flows
+#        run: echo "The selected flows are ${{ steps.flows-list.outputs.FLOWS_LIST }}"
+
+
         #               - id: set-matrix
         #               run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
         #        run: echo "The selected flows are ${{ steps.flows-list.outputs.FLOWS_LIST }}"
