@@ -1,0 +1,1 @@
+aws ecs describe-task-definition --task-definition crypto_prices_etl --query taskDefinition > task-definition.json

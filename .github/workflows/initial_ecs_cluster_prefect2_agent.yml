@@ -1,0 +1,76 @@
+name: Create ECS Cluster, deploy Prefect agent as a service with the same name as the project name
+
+on:
+  workflow_dispatch:
+    inputs:
+      workspace:
+        description: Prefect Cloud 2.0 workspace name
+        required: true
+        default: annaprefect/production
+      project:
+        description: Project name with Prefect flows
+        required: true
+        default: prefectdataops
+      cluster:
+        description: Cluster name
+        required: true
+        default: prefect2
+      region:
+        description: AWS Region
+        required: true
+        default: 'us-east-1'
+      image:
+        description: Docker image for the initial service
+        required: true
+        default: 'prefecthq/prefect:2.0b7-python3.9'
+      cpu:
+        description: 'CPU for the agent'
+        required: true
+        default: '512'
+        type: choice
+        options: ['256', '512', '1024', '2048', '4096']
+      memory:
+        description: 'Memory for the agent'
+        required: true
+        default: '1024'
+        type: choice
+        options: ['512', '1024', '2048', '4096', '5120', '6144', '7168', '8192']
+jobs:
+  deploy:
+    name: Deploy ECS Fargate cluster
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.9
+
+      - name: Python dependencies
+        run: pip install -U "prefect>=2.0b"
+
+      - name: Login to Prefect Cloud 2.0
+        run: prefect cloud login --key ${{ secrets.PREFECT_API_KEY}} --workspace ${{ github.event.inputs.workspace }}
+
+      - name: Create a project work-queue
+        run: prefect work-queue create ${{ github.event.inputs.project }}
+
+      - name: Configure AWS credentials
+        if: always()
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ github.event.inputs.region}}
+
+      - name: Deploy to AWS CloudFormation
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: prefect-ecs-cluster-and-agent
+          template: infrastructure/ecs_cluster_prefect2_agent.yml
+          capabilities: CAPABILITY_NAMED_IAM
+          parameter-overrides: "cpu=${{ github.event.inputs.cpu }},memory=${{ github.event.inputs.memory }},project=${{ github.event.inputs.project }},cluster=${{ github.event.inputs.cluster }},image=${{ github.event.inputs.image }}"

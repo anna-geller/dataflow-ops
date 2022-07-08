@@ -1,0 +1,5 @@
+prefect_slack
+prefect_shell
+sqlalchemy
+pandas
+boto3
