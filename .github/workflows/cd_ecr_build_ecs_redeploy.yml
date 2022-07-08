@@ -1,4 +1,4 @@
-name: Deploy flows to the Prefect backend
+name: Deploy flows to S3, code dependencies to ECR and agent to AWS ECS
 
 on:
   workflow_dispatch:

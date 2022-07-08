@@ -1,4 +1,4 @@
-name: Deploy flows to S3, code dependencies to ECR and agent to AWS ECS
+name: Deploy flows to the Prefect backend
 
 on:
   push:
