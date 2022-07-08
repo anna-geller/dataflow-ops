@@ -15,7 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       flows: ${{ steps.filter.outputs.flows }}
-      code_dependencies: ${{ steps.filter.outputs.code_dependencies }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
