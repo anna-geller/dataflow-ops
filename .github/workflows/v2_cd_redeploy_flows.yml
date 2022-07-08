@@ -29,7 +29,7 @@ jobs:
       - name: List flows
         #if: ${{ steps.filter.outputs.python == 'true' }}
         id: flows-list
-        run: echo '::set-output name=matrix::$( steps.filter.outputs.python_files | jq -R -s -c 'split("\n")[:-1]')'
+        run: echo "::set-output name=matrix::$( ${{steps.filter.outputs.python_files}} | jq -R -s -c 'split("\n")[:-1]')"
 #        run: echo '::set-output name=matrix::${{ toJson(steps.filter.outputs.python_files) }}'
 #        run: echo '::set-output name=matrix::${{ toJson(steps.filter.outputs.python_files) }}'
 #      - run: echo "::set-output name=matrix::{\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}"
@@ -39,6 +39,11 @@ jobs:
         #               run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
         #        run: echo "The selected flows are ${{ steps.flows-list.outputs.FLOWS_LIST }}"
         # $(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')
+
+
+  echo '::set-output name=matrix::"flows/healthcheck.py,flows/parametrized_trend_check.py"'
+
+
   deploy:
     needs: changes
     runs-on: ubuntu-latest
