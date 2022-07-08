@@ -53,7 +53,7 @@ jobs:
       - name: Create new ECR repository using AWS CloudFormation
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
-          name: ${{ github.event.inputs.cloudformation-ecr-stack }}
+          name: ${{ github.event.inputs.project }}
           template: infrastructure/create_ecr_repository.yml
           parameter-overrides: "RepositoryName=${{ github.event.inputs.project }}"
           no-fail-on-empty-changeset: "1"
@@ -72,6 +72,7 @@ jobs:
   deploy:
     name: Deploy ECS Fargate cluster
     runs-on: ubuntu-latest
+    needs: ecr-deploy
     steps:
       - name: Checkout
         uses: actions/checkout@v3
