@@ -30,7 +30,7 @@ jobs:
               - 'prefect_dataops/**'
               - 'requirements.txt'
 
-  flows:
+  deploy_flows:
     name: Deploy flows to Prefect backend
     needs: changes
     if: ${{ needs.changes.outputs.flows == 'true' }}
@@ -61,7 +61,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Create deployment
         run: prefect deployment create ${{ matrix.flows }}
-  code_dependencies:
+  deploy_code_dependencies:
     name: Build and push container image
     needs: changes
     if: ${{ needs.changes.outputs.code_dependencies == 'true' }}
