@@ -22,14 +22,15 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: filter
         with:
-          list-files: csv
+          list-files: shell
           filters: |
             python:
               - added|modified: 'flows/*.py'
       - name: List flows
         #if: ${{ steps.filter.outputs.python == 'true' }}
         id: flows-list
-        run: echo '::set-output name=matrix::${{ toJson(steps.filter.outputs.python_files) }}'
+        run: echo '::set-output name=matrix::$( steps.filter.outputs.python_files | jq -R -s -c 'split("\n")[:-1]')'
+#        run: echo '::set-output name=matrix::${{ toJson(steps.filter.outputs.python_files) }}'
 #        run: echo '::set-output name=matrix::${{ toJson(steps.filter.outputs.python_files) }}'
 #      - run: echo "::set-output name=matrix::{\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}"
       - name: Get flows
