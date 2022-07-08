@@ -2,7 +2,7 @@ import requests
 from prefect import task, flow, get_run_logger
 from prefect.deployments import DeploymentSpec
 
-# from prefect.deployments import Deployment  # todo from 2.0b8 release
+# from prefect.deployments import Deployment  # todo from 2.0b8 release xxx
 
 
 @task
