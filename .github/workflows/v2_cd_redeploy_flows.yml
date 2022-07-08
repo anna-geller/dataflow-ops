@@ -28,7 +28,10 @@ jobs:
               - added|modified: 'flows/*.py'
       - name: List flows
         if: ${{ steps.filter.outputs.python == 'true' }}
-        run: echo ${{ steps.filter.outputs.python_files }}
+        id: flows-list
+        run: echo '::set-output name=FLOWS_LIST::${{ steps.filter.outputs.python_files }}'
+      - name: Get flows
+        run: echo "The selected flows are ${{ steps.flows-list.outputs.FLOWS_LIST }}"
 #  deploy_flows:
 #    needs: [list-flows, changes]
 #    if: ${{ needs.changes.outputs.run_or_skip_flows == 'true' }}
