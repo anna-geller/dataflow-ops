@@ -13,8 +13,9 @@ jobs:
   changes:
     name: Detect changes and set job outputs based on filters
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.flows-list.outputs.FLOWS_LIST }}
+    strategy:
+      matrix:
+        flows: ${{ fromJson(steps.flows-list.outputs.FLOWS_LIST) }}
 #    outputs:
 #      run_or_skip_flows: ${{ steps.filter.outputs.flows }}
       # flows: ${{ steps.filter.outputs.changes }}
@@ -34,19 +35,21 @@ jobs:
         run: echo '::set-output name=FLOWS_LIST::${{ steps.filter.outputs.python_files }}'
       - name: Get flows
         run: echo "The selected flows are ${{ steps.flows-list.outputs.FLOWS_LIST }}"
-#        run: echo "The selected flows are ${{ steps.flows-list.outputs.FLOWS_LIST }}"
-        # $(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')
-  deploy:
-    needs: changes
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        flows: ${{ fromJson(needs.changes.outputs.matrix) }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
       - name: Create deployment
         run: echo "prefect deployment create" ${{ matrix.flows }}"
+#        run: echo "The selected flows are ${{ steps.flows-list.outputs.FLOWS_LIST }}"
+        # $(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')
+#  deploy:
+#    needs: changes
+#    runs-on: ubuntu-latest
+#    strategy:
+#      matrix:
+#        flows: ${{ fromJson(needs.changes.outputs.matrix) }}
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v3
+#      - name: Create deployment
+#        run: echo "prefect deployment create" ${{ matrix.flows }}"
 #  deploy_flows:
 #    needs: [list-flows, changes]
 #    if: ${{ needs.changes.outputs.run_or_skip_flows == 'true' }}
