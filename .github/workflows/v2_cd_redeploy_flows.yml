@@ -1,0 +1,69 @@
+name: Deploy flows
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  PREFECT_WORKSPACE: "annaprefect/production"
+  AWS_REGION: us-east-1
+
+jobs:
+  changes:
+    name: Detect changes and set job outputs based on filters
+    runs-on: ubuntu-latest
+#    outputs:
+#      run_or_skip_flows: ${{ steps.filter.outputs.flows }}
+      # flows: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          list-files: shell
+          filters: |
+            python:
+              - added|modified: 'flows/*.py'
+      - name: List flows
+        if: ${{ steps.filter.outputs.python == 'true' }}
+        run: echo ${{ steps.filter.outputs.python_files }}
+#  deploy_flows:
+#    needs: [list-flows, changes]
+#    if: ${{ needs.changes.outputs.run_or_skip_flows == 'true' }}
+#    runs-on: ubuntu-latest
+#    outputs:
+#      matrix: ${{ steps.set-matrix.outputs.matrix }}
+#    strategy:
+#      matrix:
+#         flow: ${{ fromJSON(needs.changes.outputs.flows) }}
+#    steps:
+#
+#      - name: Checkout
+#        uses: actions/checkout@v3
+#      - name: print files
+#        run: echo ${{ steps.filter.outputs.markdown_files }}
+
+
+
+#      - name: Set up Python 3.9
+#        uses: actions/setup-python@v3
+#        with:
+#          python-version: 3.9
+#      - name: Python dependencies
+#        run: |
+#          pip install s3fs
+#          pip install -U "prefect>=2.0b"
+#      - name: Login to Prefect Cloud 2.0
+#        run: prefect cloud login --key ${{ secrets.PREFECT_API_KEY}} --workspace ${{ env.PREFECT_WORKSPACE }}
+#      - name: Validate Prefect version
+#        run: prefect version
+#      - name: Configure AWS credentials
+#        uses: aws-actions/configure-aws-credentials@v1
+#        with:
+#          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#          aws-region: ${{ env.AWS_REGION }}
+#      - name: Create deployment
+#        run: prefect deployment create ${{ matrix.flows }}

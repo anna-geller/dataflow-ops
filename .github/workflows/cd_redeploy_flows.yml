@@ -1,9 +1,10 @@
 name: Deploy flows to the Prefect backend
 
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
+#  push:
+#    branches:
+#      - master
 
 env:
   PREFECT_WORKSPACE: "annaprefect/production"
@@ -37,7 +38,6 @@ jobs:
               - added|modified: 'flows/**.py'
 
   deploy_flows:
-    name: Deploy flows to Prefect backend
     needs: [list-flows, changes]
     if: ${{ needs.changes.outputs.run_or_skip_flows == 'true' }}
     runs-on: ubuntu-latest
