@@ -33,7 +33,7 @@ jobs:
   flows:
     name: Deploy flows to Prefect backend
     needs: changes
-    if: ${{ needs.changes.outputs.flows == ["flows"] }}
+    if: ${{ needs.changes.outputs.flows == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
