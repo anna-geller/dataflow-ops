@@ -23,10 +23,10 @@ jobs:
         uses: dorny/paths-filter@v2
         id: filter
         with:
-          list-files: 'csv'
+          list-files: shell
           filters: |
             flows:
-              - 'flows/**'
+              - added|modified: 'flows/**.py'
 
 
   deploy_flows:
