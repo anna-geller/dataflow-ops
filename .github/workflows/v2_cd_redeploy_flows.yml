@@ -14,7 +14,7 @@ jobs:
     name: Detect changes and set job outputs based on filters
     runs-on: ubuntu-latest
     outputs:
-      prefectflows: ${{ steps.flows-list.outputs.FLOWS_LIST }}
+      prefectflows: ${{ steps.flows-list.outputs.matrix }}
 #      prefectflows: ${{ steps.filter.outputs.changes }}
     steps:
       - name: Checkout
@@ -29,11 +29,11 @@ jobs:
       - name: List flows
         #if: ${{ steps.filter.outputs.python == 'true' }}
         id: flows-list
-        run: echo '::set-output name=FLOWS_LIST::[${{ steps.filter.outputs.python_files }}]'
+        run: echo '::set-output name=matrix::${{ toJson(steps.filter.outputs.python_files) }}'
+#        run: echo '::set-output name=matrix::${{ toJson(steps.filter.outputs.python_files) }}'
+#      - run: echo "::set-output name=matrix::{\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}"
       - name: Get flows
-        run: echo "The selected flows are ${{ steps.flows-list.outputs.FLOWS_LIST }}"
-
-
+        run: echo "The selected flows are ${{ steps.flows-list.outputs.matrix }}"
         #               - id: set-matrix
         #               run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
         #        run: echo "The selected flows are ${{ steps.flows-list.outputs.FLOWS_LIST }}"
