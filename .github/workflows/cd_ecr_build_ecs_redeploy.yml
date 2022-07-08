@@ -23,7 +23,10 @@ jobs:
       flows: ${{ steps.filter.outputs.flows }}
       code_dependencies: ${{ steps.filter.outputs.code_dependencies }}
     steps:
-      - uses: dorny/paths-filter@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Detect changes in flows and code deps
+        uses: dorny/paths-filter@v2
         id: filter
         with:
           filters: |
