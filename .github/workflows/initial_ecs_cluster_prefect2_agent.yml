@@ -18,7 +18,7 @@ on:
       region:
         description: AWS Region
         required: true
-        default: 'us-east-1'
+        default: us-east-1
       image:
         description: Docker image for the initial service
         required: true

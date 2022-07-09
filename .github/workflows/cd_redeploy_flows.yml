@@ -10,6 +10,8 @@ env:
   PREFECT_WORKSPACE: annaprefect/production
   AWS_REGION: us-east-1
   PROJECT: prefectdataops
+  ECS_CLUSTER: prefect2
+  ECS_TASK_DEFINITION: task-definition.json
 
 jobs:
   set_description:
@@ -24,6 +26,8 @@ jobs:
           echo "- **Deploy**: creates Prefect Deployments for new and changed flows" >> $GITHUB_STEP_SUMMARY
           echo "- **Build**: rebuilds Docker image and redeploys the agent service if any code dependencies changed </br>" >> $GITHUB_STEP_SUMMARY
           echo "Running in AWS_REGION ${{ env.AWS_REGION }} and Prefect workspace ${{ env.PREFECT_WORKSPACE }}" >> $GITHUB_STEP_SUMMARY
+          echo "Prefect agent gets deployed to AWS ECS Service ${{ env.ECS_CLUSTER }}/${{ env.PROJECT }} " >> $GITHUB_STEP_SUMMARY
+
   changes:
     name: Detect changes and set job outputs based on filters
     runs-on: ubuntu-latest
@@ -78,6 +82,13 @@ jobs:
 
       - name: Deploy flows to S3
         run: prefect deployment create ${{ matrix.flows }}
+
+      - name: Create a project work-queue (idempotent)
+        run: prefect work-queue create ${{ env.PROJECT }}
+
+      - name: Create a project work-queue (idempotent)
+        if: always()
+        run: echo "Prefect work-queue ${{ env.PROJECT }} exists and flows are deployed" >> $GITHUB_STEP_SUMMARY
 
   build:
     needs: changes

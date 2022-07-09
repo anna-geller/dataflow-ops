@@ -10,16 +10,18 @@ def deploy_to_s3(
     flow: Flow,
     cron_schedule: str = None,
     timezone: str = "America/New_York",
-    name: str = "prefectdataops",
+    name: str = None,  # deployment name suffix
+    project: str = "prefectdataops",
     s3_bucket: str = "prefectdata",
     log_level: str = "DEBUG",
     **kwargs,
 ) -> Deployment:
+    deployment_name = f"{project}_{name}" if name else project
     if cron_schedule:
         return Deployment(
             flow=flow,
-            name=name,
-            tags=[name],
+            name=deployment_name,
+            tags=[project],
             schedule=CronSchedule(cron=cron_schedule, timezone=timezone),
             packager=FilePackager(
                 filesystem=RemoteFileSystem(basepath=f"s3://{s3_bucket}/flows")
@@ -30,8 +32,8 @@ def deploy_to_s3(
     else:
         return Deployment(
             flow=flow,
-            name=name,
-            tags=[name],
+            name=deployment_name,
+            tags=[project],
             packager=FilePackager(
                 filesystem=RemoteFileSystem(basepath=f"s3://{s3_bucket}/flows")
             ),
