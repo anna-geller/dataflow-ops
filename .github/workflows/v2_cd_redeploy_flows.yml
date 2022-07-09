@@ -72,12 +72,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
       - name: Generate task definition
-        run: aws ecs describe-task-definition --task-definition prefectdataops --query taskDefinition > output/task-definition.json
+        run: aws ecs describe-task-definition --task-definition prefectdataops --query taskDefinition > ecs-task-definition.json
       - name: Upload task definition as artifact
         uses: actions/upload-artifact@v3
         with:
           name: task-definition
-          path: output/task-definition.json.html
+          path: ecs-task-definition.json.html
 #      - name: Set up Python 3.9
 #        uses: actions/setup-python@v3
 #        with:
