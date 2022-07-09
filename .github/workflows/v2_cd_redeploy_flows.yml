@@ -14,8 +14,8 @@ jobs:
     name: Detect changes and set job outputs based on filters
     runs-on: ubuntu-latest
     outputs:
-      prefectflows: ${{ steps.filter.outputs.python_files }}
-    #      prefectflows: ${{ steps.filter.outputs.changes }}
+      prefect_flows: ${{ steps.filter.outputs.flows_files }}
+      prefect_flows_changed: ${{ steps.filter.outputs.flows }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -24,14 +24,15 @@ jobs:
         with:
           list-files: json
           filters: |
-            python:
+            flows:
               - added|modified: 'flows/*.py'
   deploy:
     needs: changes
+    if: ${{ needs.changes.outputs.prefect_flows_changed == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        flows: ${{ fromJson(needs.changes.outputs.prefectflows) }}
+        flows: ${{ fromJson(needs.changes.outputs.prefect_flows) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
