@@ -14,16 +14,16 @@ def check_if_trending(trending_page, repo="prefect"):
 
 @flow
 def check_trending_repos(
-    repo: str = "prefect", url: str = "https://github.com/trending/python",
+    repo: str = "prefect",
+    url: str = "https://github.com/trending/python",
 ):
     content = requests.get(url, params={"since": "daily"}).content
     return check_if_trending(content, repo)
 
 
 deploy_to_s3(check_trending_repos)
-deploy_to_s3(check_trending_repos, parameters=dict(repo="keras"))
+deploy_to_s3(check_trending_repos, parameters=dict(repo="keras"), name="keras")
 
 
 if __name__ == "__main__":
     check_trending_repos(repo="prefect")
-# xx

@@ -31,8 +31,9 @@ def healthcheck():
     log_platform_info(wait_for=[hi])
 
 
-deploy_to_s3(healthcheck, cron_schedule="*/2 * * * *")
+deploy_to_s3(healthcheck)
+# deploy_to_s3(healthcheck, cron_schedule="*/2 * * * *")
+
 
 if __name__ == "__main__":
     healthcheck()
-# xx
