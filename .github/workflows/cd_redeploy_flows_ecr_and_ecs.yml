@@ -132,8 +132,6 @@ jobs:
           container-name: ${{ env.PROJECT }}
           image: ${{ steps.build-image.outputs.image }}
 
-      - name: Rendered task definition
-        run: echo ${{ steps.task-def.outputs.task-definition }} >> $GITHUB_STEP_SUMMARY
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
@@ -142,3 +140,6 @@ jobs:
           service: ${{ env.ECS_CLUSTER }}/${{ env.PROJECT }}
           cluster: ${{ env.ECS_CLUSTER }}
           # wait-for-service-stability: true
+
+      - name: Rendered task definition
+        run: cat ${{ steps.task-def.outputs.task-definition }} >> $GITHUB_STEP_SUMMARY
