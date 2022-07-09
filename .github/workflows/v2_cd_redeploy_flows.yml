@@ -11,7 +11,6 @@ env:
 
 jobs:
   set_description:
-    name: Set description
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -77,7 +76,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: task-definition
-          path: ecs-task-definition.json.html
+          path: ecs-task-definition.json
 #      - name: Set up Python 3.9
 #        uses: actions/setup-python@v3
 #        with:
