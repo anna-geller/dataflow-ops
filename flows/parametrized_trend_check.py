@@ -40,4 +40,3 @@ Deployment(
 
 if __name__ == "__main__":
     check_trending_repos(repo="prefect")
-# xx

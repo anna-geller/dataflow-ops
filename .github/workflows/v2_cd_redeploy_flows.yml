@@ -11,7 +11,7 @@ env:
 
 jobs:
   set_description:
-    name: Detect changes and set job outputs based on filters
+    name: Set description
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,7 +22,7 @@ jobs:
           echo "- **Changes**: detects changes in flow code and code dependencies as compared to the last commit" >> $GITHUB_STEP_SUMMARY
           echo "- **Deploy**: creates Prefect Deployments for new and changed flows" >> $GITHUB_STEP_SUMMARY
           echo "- **Build**: rebuilds Docker image and redeploys the agent service if any code dependencies changed </br>" >> $GITHUB_STEP_SUMMARY
-          echo "Running in AWS_REGION `$AWS_REGION` and Prefect workspace `$PREFECT_WORKSPACE`" >> $GITHUB_STEP_SUMMARY
+          echo "Running in AWS_REGION ${{ env.AWS_REGION }} and Prefect workspace ${{ env.PREFECT_WORKSPACE }}" >> $GITHUB_STEP_SUMMARY
   changes:
     name: Detect changes and set job outputs based on filters
     runs-on: ubuntu-latest
@@ -58,7 +58,7 @@ jobs:
 
   build:
     needs: changes
-    if: ${{ needs.changes.outputs.code_dependencies_changed == 'true' }}
+#    if: ${{ needs.changes.outputs.code_dependencies_changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -70,7 +70,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: $AWS_REGION
+          aws-region: ${{ env.AWS_REGION }}
       - name: Generate task definition
         run: aws ecs describe-task-definition --task-definition prefectdataops --query taskDefinition > output/task-definition.json
       - name: Upload task definition as artifact
