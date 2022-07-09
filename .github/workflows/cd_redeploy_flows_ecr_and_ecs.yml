@@ -49,9 +49,9 @@ jobs:
               - added|modified|deleted: 'requirements.txt'
       - name: Generate Markdown Summary
         run: | 
-        echo "Changes as compared to the last commit" >> $GITHUB_STEP_SUMMARY
-        echo ${{ steps.filter.outputs.flows_files }} >> $GITHUB_STEP_SUMMARY
-        echo ${{ steps.filter.outputs.code_files }} >> $GITHUB_STEP_SUMMARY
+          echo "Changes as compared to the last commit" >> $GITHUB_STEP_SUMMARY
+          echo ${{ steps.filter.outputs.flows_files }} >> $GITHUB_STEP_SUMMARY
+          echo ${{ steps.filter.outputs.code_files }} >> $GITHUB_STEP_SUMMARY
   deploy:
     needs: changes
     if: ${{ needs.changes.outputs.prefect_flows_changed == 'true' }}

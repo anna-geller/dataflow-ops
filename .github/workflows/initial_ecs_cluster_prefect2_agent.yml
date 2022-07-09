@@ -48,7 +48,6 @@ jobs:
   deploy:
     name: Deploy flows and create a project work-queue
     needs: list-flows
-    if: ${{ needs.changes.outputs.prefect_flows_changed == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -114,7 +113,7 @@ jobs:
   prefect-agent-ecs:
     name: ECS cluster & Prefect agent service
     runs-on: ubuntu-latest
-    needs: ecr-deploy
+    needs: ecr-repo
     steps:
       - name: Checkout
         uses: actions/checkout@v3
