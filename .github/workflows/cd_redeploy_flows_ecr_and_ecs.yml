@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-  workflow_dispatch:
 
 env:
   PREFECT_WORKSPACE: annaprefect/production
@@ -29,7 +28,7 @@ jobs:
           echo "Prefect agent gets deployed to AWS ECS Service ${{ env.ECS_CLUSTER }}/${{ env.PROJECT }} " >> $GITHUB_STEP_SUMMARY
 
   changes:
-    name: Detect changes and set job outputs based on filters
+    name: Detect flow and code dependency changes
     runs-on: ubuntu-latest
     outputs:
       prefect_flows: ${{ steps.filter.outputs.flows_files }}
@@ -48,6 +47,11 @@ jobs:
             code:
               - added|modified|deleted: 'prefect_dataops/**'
               - added|modified|deleted: 'requirements.txt'
+      - name: Generate Markdown Summary
+        run: | 
+        echo "Changes as compared to the last commit" >> $GITHUB_STEP_SUMMARY
+        echo ${{ steps.filter.outputs.flows_files }} >> $GITHUB_STEP_SUMMARY
+        echo ${{ steps.filter.outputs.code_files }} >> $GITHUB_STEP_SUMMARY
   deploy:
     needs: changes
     if: ${{ needs.changes.outputs.prefect_flows_changed == 'true' }}
@@ -83,20 +87,17 @@ jobs:
       - name: Deploy flows to S3
         run: prefect deployment create ${{ matrix.flows }}
 
-      - name: Create a project work-queue (idempotent)
-        run: prefect work-queue create ${{ env.PROJECT }}
+      - name: Flow deployments finished
+        run: echo "Flow deployments finished at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
 
-      - name: Create a project work-queue (idempotent)
-        if: always()
-        run: echo "Prefect work-queue ${{ env.PROJECT }} exists and flows are deployed" >> $GITHUB_STEP_SUMMARY
-
-  build:
+  ecr-ecs-build:
     needs: changes
     if: ${{ needs.changes.outputs.code_dependencies_changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: ECR build + ECS agent deploy
         run: echo "rebuilding docker image and ECS service"
       - name: Configure AWS credentials
@@ -106,11 +107,38 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Generate task definition
-        run: aws ecs describe-task-definition --task-definition ${{ env.PROJECT }} --query taskDefinition > task-definition.json
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Upload task definition as artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ECS task definition
-          path: task-definition.json
+#      - name: Build, tag, and push image to Amazon ECR
+#        id: build-image
+#        env:
+#          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+#          IMAGE_TAG: ${{ github.sha }}
+#        run: |
+#          docker build -t $ECR_REGISTRY/$PROJECT:$IMAGE_TAG .
+#          docker push $ECR_REGISTRY/$PROJECT:$IMAGE_TAG
+#          echo "::set-output name=image::$ECR_REGISTRY/$PROJECT:$IMAGE_TAG"
+#
+#      - name: Flow deployments finished
+#        run: echo "ECR image $ECR_REGISTRY/$PROJECT:$IMAGE_TAG built at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
+#
+#      - name: Fill in the new image ID in the Amazon ECS task definition
+#        id: task-def
+#        uses: aws-actions/amazon-ecs-render-task-definition@v1
+#        with:
+#          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+#          container-name: ${{ env.PROJECT }}
+#          image: ${{ steps.build-image.outputs.image }}
+#
+#      - name: Rendered task definition
+#        run: echo ${{ steps.task-def.outputs.task-definition }} >> $GITHUB_STEP_SUMMARY
+#
+#      - name: Deploy Amazon ECS task definition
+#        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+#        with:
+#          task-definition: ${{ steps.task-def.outputs.task-definition }}
+#          service: ${{ env.ECS_CLUSTER }}/${{ env.PROJECT }}
+#          cluster: ${{ env.ECS_CLUSTER }}
+#          # wait-for-service-stability: true

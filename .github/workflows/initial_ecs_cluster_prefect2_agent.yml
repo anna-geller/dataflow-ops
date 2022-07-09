@@ -22,7 +22,7 @@ on:
       image:
         description: Docker image for the initial service
         required: true
-        default: 'prefecthq/prefect:2.0b8-python3.9'
+        default: prefecthq/prefect:2.0b8-python3.9
       cpu:
         description: CPU for the agent
         required: true
@@ -36,10 +36,61 @@ on:
         type: choice
         options: ['512', '1024', '2048', '4096', '5120', '6144', '7168', '8192']
 jobs:
-  ecr-deploy:
-    name: Create ECR repo, build and push the image
+  list-flows:
     runs-on: ubuntu-latest
-    environment: staging
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: set-matrix
+        run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
+
+  deploy:
+    name: Deploy flows and create a project work-queue
+    needs: list-flows
+    if: ${{ needs.changes.outputs.prefect_flows_changed == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        flows: ${{ fromJson(needs.list-flows.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.9
+
+      - name: Python dependencies
+        run: |
+          pip install .
+          pip install s3fs
+          pip install -U "prefect>=2.0b"
+
+      - name: Prefect Cloud login
+        run: prefect cloud login --key ${{ secrets.PREFECT_API_KEY}} --workspace ${{ github.event.inputs.workspace }}
+
+      - name: AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ github.event.inputs.region}}
+
+      - name: Deploy flows to S3
+        run: prefect deployment create ${{ matrix.flows }}
+
+      - name: Create a project work-queue
+        run: prefect work-queue create ${{ github.event.inputs.project }}
+        continue-on-error: true
+
+      - name: Flow deployments finished
+        run: echo "Flow deployments finished at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
+
+  ecr-repo:
+    name: Create ECR repo
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -57,31 +108,18 @@ jobs:
           template: infrastructure/create_ecr_repository.yml
           parameter-overrides: "RepositoryName=${{ github.event.inputs.project }}"
           no-fail-on-empty-changeset: "1"
+      - name: Flow deployments finished
+        run: echo "ECR repository built at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
 
-  prefect-agent-ecs-deploy:
-    name: Deploy ECS Fargate cluster & Prefect agent service
+  prefect-agent-ecs:
+    name: ECS cluster & Prefect agent service
     runs-on: ubuntu-latest
     needs: ecr-deploy
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v3
-        with:
-          python-version: 3.9
-
-      - name: Python dependencies
-        run: pip install -U "prefect>=2.0b"
-
-      - name: Login to Prefect Cloud 2.0
-        run: prefect cloud login --key ${{ secrets.PREFECT_API_KEY}} --workspace ${{ github.event.inputs.workspace }}
-
-      - name: Create a project work-queue (idempotent)
-        run: prefect work-queue create ${{ github.event.inputs.project }}
-
       - name: Configure AWS credentials
-        if: always()
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -93,7 +131,7 @@ jobs:
           aws ssm put-parameter --type SecureString --name PREFECT_API_URL --value ${{ secrets.PREFECT_API_URL}} --overwrite
           aws ssm put-parameter --type SecureString --name PREFECT_API_KEY --value ${{ secrets.PREFECT_API_KEY}} --overwrite
 
-      - name: Deploy with AWS CloudFormation
+      - name: Deploy to ECS with AWS CloudFormation
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
           name: prefect-ecs-cluster-and-agent

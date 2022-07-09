@@ -3,16 +3,7 @@
         {
             "name": "prefectdataops",
             "image": "338306982838.dkr.ecr.us-east-1.amazonaws.com/prefectdataops",
-            "cpu": 0,
-            "links": [],
-            "portMappings": [],
             "essential": true,
-            "entryPoint": [],
-            "command": [],
-            "environment": [],
-            "environmentFiles": [],
-            "mountPoints": [],
-            "volumesFrom": [],
             "secrets": [
                 {
                     "name": "PREFECT_API_URL",
@@ -23,32 +14,21 @@
                     "valueFrom": "arn:aws:ssm:us-east-1:338306982838:parameter/PREFECT_API_KEY"
                 }
             ],
-            "dnsServers": [],
-            "dnsSearchDomains": [],
-            "extraHosts": [],
-            "dockerSecurityOptions": [],
-            "dockerLabels": {},
-            "ulimits": [],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
                     "awslogs-group": "prefectdataops",
                     "awslogs-region": "us-east-1",
                     "awslogs-stream-prefix": "ecs"
-                },
-                "secretOptions": []
-            },
-            "systemControls": []
+                }
+            }
         }
     ],
     "family": "prefectdataops",
     "taskRoleArn": "arn:aws:iam::338306982838:role/prefectdataops_ecs_task_role",
     "executionRoleArn": "arn:aws:iam::338306982838:role/prefectdataops_ecs_execution_role",
     "networkMode": "awsvpc",
-    "volumes": [],
-    "placementConstraints": [],
     "requiresCompatibilities": [
-        "EC2",
         "FARGATE"
     ],
     "cpu": "256",
