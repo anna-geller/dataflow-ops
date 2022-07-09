@@ -35,3 +35,4 @@ deploy_to_s3(healthcheck, cron_schedule="*/2 * * * *")
 
 if __name__ == "__main__":
     healthcheck()
+# xx
