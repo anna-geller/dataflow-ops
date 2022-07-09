@@ -35,6 +35,12 @@ on:
         default: '1024'
         type: choice
         options: ['512', '1024', '2048', '4096', '5120', '6144', '7168', '8192']
+      work-queue:
+        description: Create project work-queue?
+        required: true
+        default: 'true'
+        type: choice
+        options: ['true', 'false']
 jobs:
   list-flows:
     runs-on: ubuntu-latest
@@ -46,7 +52,6 @@ jobs:
         run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
 
   deploy:
-    name: Deploy flows and create a project work-queue
     needs: list-flows
     runs-on: ubuntu-latest
     strategy:
@@ -80,12 +85,30 @@ jobs:
       - name: Deploy flows to S3
         run: prefect deployment create ${{ matrix.flows }}
 
+      - name: Flow deployments finished
+        run: echo "Flow deployments finished at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
+
+  create-work-queue:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.work-queue }} == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.9
+
+      - name: Python dependencies
+        run: pip install -U "prefect>=2.0b"
+
+      - name: Prefect Cloud login
+        run: prefect cloud login --key ${{ secrets.PREFECT_API_KEY}} --workspace ${{ github.event.inputs.workspace }}
+
       - name: Create a project work-queue
         run: prefect work-queue create ${{ github.event.inputs.project }}
         continue-on-error: true
-
-      - name: Flow deployments finished
-        run: echo "Flow deployments finished at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
 
   ecr-repo:
     name: Create ECR repo
@@ -107,7 +130,7 @@ jobs:
           template: infrastructure/create_ecr_repository.yml
           parameter-overrides: "RepositoryName=${{ github.event.inputs.project }}"
           no-fail-on-empty-changeset: "1"
-      - name: Flow deployments finished
+      - name: Flow deployment finished
         run: echo "ECR repository built at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
 
   prefect-agent-ecs:
@@ -137,6 +160,9 @@ jobs:
           template: infrastructure/ecs_cluster_prefect2_agent.yml
           capabilities: CAPABILITY_NAMED_IAM
           parameter-overrides: "cpu=${{ github.event.inputs.cpu }},memory=${{ github.event.inputs.memory }},project=${{ github.event.inputs.project }},cluster=${{ github.event.inputs.cluster }},image=${{ github.event.inputs.image }}"
+
+      - name: ECS Service Deployment finished
+        run: echo "ECS Service Deployment finished at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
 
       - name: Generate task definition
         run: aws ecs describe-task-definition --task-definition ${{ github.event.inputs.project }} --query taskDefinition > task-definition.json
