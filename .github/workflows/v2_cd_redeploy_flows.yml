@@ -14,7 +14,7 @@ jobs:
     name: Detect changes and set job outputs based on filters
     runs-on: ubuntu-latest
     outputs:
-      prefectflows: steps.filter.outputs.python_files
+      prefectflows: ${{ steps.filter.outputs.python_files }}
     #      prefectflows: ${{ steps.filter.outputs.changes }}
     steps:
       - name: Checkout
