@@ -54,8 +54,9 @@ jobs:
         run: echo "rebuilding docker image and ECS service"
       - name: Generate Markdown Summary
         run: |
-          echo "## Workflow Description" >> $GITHUB_STEP_SUMMARY
+          echo "## Workflow: $GITHUB_WORKFLOW" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Workflow was triggered by event: $GITHUB_EVENT_NAME and actor: $GITHUB_ACTOR" >> $GITHUB_STEP_SUMMARY
           echo "- **Changes**: detects changes in flow code and code dependencies as compared to the last commit" >> $GITHUB_STEP_SUMMARY
           echo "- **Deploy**: creates Prefect Deployments for new and changed flows" >> $GITHUB_STEP_SUMMARY
           echo "- **Build**: rebuilds Docker image and redeploys the agent service if any code dependencies changed" >> $GITHUB_STEP_SUMMARY
