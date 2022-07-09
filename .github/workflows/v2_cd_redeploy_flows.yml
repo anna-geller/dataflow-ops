@@ -10,6 +10,19 @@ env:
   AWS_REGION: us-east-1
 
 jobs:
+  set_description:
+    name: Detect changes and set job outputs based on filters
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Generate Markdown Summary
+        run: |
+          echo "### Workflow $GITHUB_WORKFLOW" >> $GITHUB_STEP_SUMMARY
+          echo "- **Changes**: detects changes in flow code and code dependencies as compared to the last commit" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deploy**: creates Prefect Deployments for new and changed flows" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build**: rebuilds Docker image and redeploys the agent service if any code dependencies changed </br>" >> $GITHUB_STEP_SUMMARY
+          echo "Running in AWS_REGION `$AWS_REGION` and Prefect workspace `$PREFECT_WORKSPACE`" >> $GITHUB_STEP_SUMMARY
   changes:
     name: Detect changes and set job outputs based on filters
     runs-on: ubuntu-latest
@@ -20,16 +33,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Generate Markdown Summary
-        run: |
-          echo "## Workflow: $GITHUB_WORKFLOW" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Workflow was triggered by: event: $GITHUB_EVENT_NAME and actor: $GITHUB_ACTOR with commit message: ${{ github.event.head_commit.message }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Workflow steps" >> $GITHUB_STEP_SUMMARY
-          echo "- **Changes**: detects changes in flow code and code dependencies as compared to the last commit" >> $GITHUB_STEP_SUMMARY
-          echo "- **Deploy**: creates Prefect Deployments for new and changed flows" >> $GITHUB_STEP_SUMMARY
-          echo "- **Build**: rebuilds Docker image and redeploys the agent service if any code dependencies changed" >> $GITHUB_STEP_SUMMARY
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -62,7 +65,19 @@ jobs:
         uses: actions/checkout@v3
       - name: Create deployment
         run: echo "rebuilding docker image and ECS service"
-
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: $AWS_REGION
+      - name: Generate task definition
+        aws ecs describe-task-definition --task-definition prefectdataops --query taskDefinition > output/task-definition.json
+      - name: Upload task definition as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: task-definition
+          path: output/task-definition.json.html
 #      - name: Set up Python 3.9
 #        uses: actions/setup-python@v3
 #        with:
