@@ -15,10 +15,6 @@
             "volumesFrom": [],
             "secrets": [
                 {
-                    "name": "SLACK_WEBHOOK_URL",
-                    "valueFrom": "arn:aws:ssm:us-east-1:338306982838:parameter/SLACK_WEBHOOK_URL"
-                },
-                {
                     "name": "PREFECT_API_URL",
                     "valueFrom": "arn:aws:ssm:us-east-1:338306982838:parameter/PREFECT_API_URL"
                 },

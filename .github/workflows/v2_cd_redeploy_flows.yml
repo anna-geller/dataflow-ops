@@ -6,7 +6,7 @@ on:
       - master
 
 env:
-  PREFECT_WORKSPACE: "annaprefect/production"
+  PREFECT_WORKSPACE: annaprefect/production
   AWS_REGION: us-east-1
 
 jobs:
@@ -14,7 +14,7 @@ jobs:
     name: Detect changes and set job outputs based on filters
     runs-on: ubuntu-latest
     outputs:
-      prefectflows: ${{ steps.flows-list.outputs.matrix }}
+      prefectflows: steps.filter.outputs.python_files
     #      prefectflows: ${{ steps.filter.outputs.changes }}
     steps:
       - name: Checkout
@@ -26,48 +26,17 @@ jobs:
           filters: |
             python:
               - added|modified: 'flows/*.py'
-      - name: List flows
-        #if: ${{ steps.filter.outputs.python == 'true' }}
-        id: flows-list
-        run: echo '::set-output name=matrix::${{ steps.filter.outputs.python_files }}'
-#        run: echo '::set-output name=matrix::${{ toJson(steps.filter.outputs.python_files) }}'
-      #        run: echo '::set-output name=matrix::${{ toJson(steps.filter.outputs.python_files) }}'
-      #      - run: echo "::set-output name=matrix::{\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}"
-      - name: Get flows
-        run: echo "The selected flows are ${{ steps.flows-list.outputs.matrix }}"
-        #               - id: set-matrix
-        #               run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
-        #        run: echo "The selected flows are ${{ steps.flows-list.outputs.FLOWS_LIST }}"
-        # $(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')
   deploy:
     needs: changes
     runs-on: ubuntu-latest
     strategy:
       matrix:
         flows: ${{ fromJson(needs.changes.outputs.prefectflows) }}
-    #        flows: ${{ fromJson(needs.changes.outputs.prefectflows_files) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Create deployment
         run: echo "prefect deployment create" ${{ matrix.flows }}
-#  deploy_flows:
-#    needs: [list-flows, changes]
-#    if: ${{ needs.changes.outputs.run_or_skip_flows == 'true' }}
-#    runs-on: ubuntu-latest
-#    outputs:
-#      matrix: ${{ steps.set-matrix.outputs.matrix }}
-#    strategy:
-#      matrix:
-#         flow: ${{ fromJSON(needs.changes.outputs.flows) }}
-#    steps:
-#
-#      - name: Checkout
-#        uses: actions/checkout@v3
-#      - name: print files
-#        run: echo ${{ steps.filter.outputs.markdown_files }}
-
-
 
 #      - name: Set up Python 3.9
 #        uses: actions/setup-python@v3

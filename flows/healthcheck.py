@@ -2,8 +2,7 @@ import prefect
 from prefect import task, flow
 from prefect import get_run_logger
 from prefect.flow_runners import UniversalFlowRunner
-from prefect.deployments import DeploymentSpec
-# from prefect.deployments import Deployment  # todo xxx
+from prefect.deployments import Deployment
 
 
 @task
@@ -33,7 +32,7 @@ def healthcheck():
     log_platform_info(wait_for=[hi])
 
 
-DeploymentSpec(
+Deployment(
     name="prefectdataops",
     flow=healthcheck,
     tags=["prefectdataops"],

@@ -8,11 +8,11 @@ on:
         required: true
         default: annaprefect/production
       project:
-        description: Project name with Prefect flows
+        description: Project name (ECS Service)
         required: true
         default: prefectdataops
       cluster:
-        description: Cluster name
+        description: ECS Cluster name
         required: true
         default: prefect2
       region:
@@ -22,15 +22,15 @@ on:
       image:
         description: Docker image for the initial service
         required: true
-        default: 'prefecthq/prefect:2.0b7-python3.9'
+        default: 'prefecthq/prefect:2.0b8-python3.9'
       cpu:
-        description: 'CPU for the agent'
+        description: CPU for the agent
         required: true
         default: '512'
         type: choice
         options: ['256', '512', '1024', '2048', '4096']
       memory:
-        description: 'Memory for the agent'
+        description: Memory for the agent
         required: true
         default: '1024'
         type: choice
@@ -50,10 +50,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ github.event.inputs.region}}
 
-      - name: Add Prefect Cloud Secrets to SSM Parameter Store (needed for container in ECS task)
-        run: |
-          aws ssm put-parameter --type SecureString --name PREFECT_API_URL --value ${{ secrets.PREFECT_API_URL}} --overwrite
-          aws ssm put-parameter --type SecureString --name PREFECT_API_KEY --value ${{ secrets.PREFECT_API_KEY}} --overwrite
       - name: Create new ECR repository using AWS CloudFormation
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
@@ -62,8 +58,8 @@ jobs:
           parameter-overrides: "RepositoryName=${{ github.event.inputs.project }}"
           no-fail-on-empty-changeset: "1"
 
-  deploy:
-    name: Deploy ECS Fargate cluster
+  prefect-agent-ecs-deploy:
+    name: Deploy ECS Fargate cluster & Prefect agent service
     runs-on: ubuntu-latest
     needs: ecr-deploy
     steps:
@@ -81,7 +77,7 @@ jobs:
       - name: Login to Prefect Cloud 2.0
         run: prefect cloud login --key ${{ secrets.PREFECT_API_KEY}} --workspace ${{ github.event.inputs.workspace }}
 
-      - name: Create a project work-queue
+      - name: Create a project work-queue (idempotent)
         run: prefect work-queue create ${{ github.event.inputs.project }}
 
       - name: Configure AWS credentials
@@ -91,6 +87,11 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ github.event.inputs.region}}
+
+      - name: Add Prefect Cloud Secrets to SSM Parameter Store (needed for container in ECS task)
+        run: |
+          aws ssm put-parameter --type SecureString --name PREFECT_API_URL --value ${{ secrets.PREFECT_API_URL}} --overwrite
+          aws ssm put-parameter --type SecureString --name PREFECT_API_KEY --value ${{ secrets.PREFECT_API_KEY}} --overwrite
 
       - name: Deploy with AWS CloudFormation
         uses: aws-actions/aws-cloudformation-github-deploy@v1

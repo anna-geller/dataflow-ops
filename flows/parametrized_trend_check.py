@@ -1,8 +1,6 @@
 import requests
 from prefect import task, flow, get_run_logger
-from prefect.deployments import DeploymentSpec
-
-# from prefect.deployments import Deployment  # todo from 2.0b8 release  yyyyxxx
+from prefect.deployments import Deployment
 
 
 @task
@@ -27,13 +25,13 @@ def check_trending_repos(
     return check_if_trending(content, repo)
 
 
-DeploymentSpec(
+Deployment(
     name="prefectdataops",
     flow=check_trending_repos,
     tags=["prefectdataops"],
 )
 
-DeploymentSpec(
+Deployment(
     name="prefectdataops_keras",
     flow=check_trending_repos,
     tags=["prefectdataops"],
