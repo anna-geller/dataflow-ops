@@ -1,11 +1,6 @@
 import requests
 from prefect import task, flow, get_run_logger
-from prefect.deployments import Deployment
-
-
-@task
-def extract_url_content(url, params=None):
-    return requests.get(url, params=params).content
+from prefect_dataops.deployments import deploy_to_s3
 
 
 @task
@@ -19,24 +14,15 @@ def check_if_trending(trending_page, repo="prefect"):
 
 @flow
 def check_trending_repos(
-    repo="prefect", url="https://github.com/trending/python", window="daily"
+    repo: str = "prefect", url: str = "https://github.com/trending/python",
 ):
-    content = extract_url_content(url, params={"since": window})
+    content = requests.get(url, params={"since": "daily"}).content
     return check_if_trending(content, repo)
 
 
-Deployment(
-    name="prefectdataops",
-    flow=check_trending_repos,
-    tags=["prefectdataops"],
-)
+deploy_to_s3(check_trending_repos)
+deploy_to_s3(check_trending_repos, parameters=dict(repo="keras"))
 
-Deployment(
-    name="prefectdataops_keras",
-    flow=check_trending_repos,
-    tags=["prefectdataops"],
-    parameters=dict(repo="keras"),
-)
 
 if __name__ == "__main__":
     check_trending_repos(repo="prefect")

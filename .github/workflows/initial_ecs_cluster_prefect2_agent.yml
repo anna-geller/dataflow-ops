@@ -100,3 +100,12 @@ jobs:
           template: infrastructure/ecs_cluster_prefect2_agent.yml
           capabilities: CAPABILITY_NAMED_IAM
           parameter-overrides: "cpu=${{ github.event.inputs.cpu }},memory=${{ github.event.inputs.memory }},project=${{ github.event.inputs.project }},cluster=${{ github.event.inputs.cluster }},image=${{ github.event.inputs.image }}"
+
+      - name: Generate task definition
+        run: aws ecs describe-task-definition --task-definition ${{ github.event.inputs.project }} --query taskDefinition > task-definition.json
+
+      - name: Upload task definition as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ECS task definition
+          path: task-definition.json

@@ -1,8 +1,7 @@
 import prefect
 from prefect import task, flow
 from prefect import get_run_logger
-from prefect.flow_runners import UniversalFlowRunner
-from prefect.deployments import Deployment
+from prefect_dataops.deployments import deploy_to_s3
 
 
 @task
@@ -32,12 +31,7 @@ def healthcheck():
     log_platform_info(wait_for=[hi])
 
 
-Deployment(
-    name="prefectdataops",
-    flow=healthcheck,
-    tags=["prefectdataops"],
-    flow_runner=UniversalFlowRunner(env=dict(PREFECT_LOGGING_LEVEL="DEBUG")),
-)
+deploy_to_s3(healthcheck, cron_schedule="*/2 * * * *")
 
 if __name__ == "__main__":
     healthcheck()

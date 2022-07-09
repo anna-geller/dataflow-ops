@@ -1,73 +1,104 @@
-name: Deploy flows to the Prefect backend
+name: Deploy flows to S3 and rebuild code dependencies and ECS agent service
 
 on:
+  push:
+    branches:
+      - master
   workflow_dispatch:
-#  push:
-#    branches:
-#      - master
 
 env:
-  PREFECT_WORKSPACE: "annaprefect/production"
+  PREFECT_WORKSPACE: annaprefect/production
   AWS_REGION: us-east-1
+  PROJECT: prefectdataops
 
 jobs:
-  list-flows:
+  set_description:
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v3
-      - id: set-matrix
-        run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Generate Markdown Summary
+        run: |
+          echo "### Workflow $GITHUB_WORKFLOW" >> $GITHUB_STEP_SUMMARY
+          echo "- **Changes**: detects changes in flow code and code dependencies as compared to the last commit" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deploy**: creates Prefect Deployments for new and changed flows" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build**: rebuilds Docker image and redeploys the agent service if any code dependencies changed </br>" >> $GITHUB_STEP_SUMMARY
+          echo "Running in AWS_REGION `${{ env.AWS_REGION }}` and Prefect workspace `${{ env.PREFECT_WORKSPACE }}`" >> $GITHUB_STEP_SUMMARY
   changes:
     name: Detect changes and set job outputs based on filters
     runs-on: ubuntu-latest
     outputs:
-      run_or_skip_flows: ${{ steps.filter.outputs.flows }}
-      # flows: ${{ steps.filter.outputs.changes }}
+      prefect_flows: ${{ steps.filter.outputs.flows_files }}
+      prefect_flows_changed: ${{ steps.filter.outputs.flows }}
+      code_dependencies_changed: ${{ steps.filter.outputs.code }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Detect changes in flows and code deps
-        uses: dorny/paths-filter@v2
+      - uses: dorny/paths-filter@v2
         id: filter
         with:
-          list-files: shell
+          list-files: json
           filters: |
             flows:
-              - added|modified: 'flows/**.py'
-
-  deploy_flows:
-    needs: [list-flows, changes]
-    if: ${{ needs.changes.outputs.run_or_skip_flows == 'true' }}
+              - added|modified: 'flows/*.py'
+            code:
+              - added|modified|deleted: 'prefect_dataops/**'
+              - added|modified|deleted: 'requirements.txt'
+  deploy:
+    needs: changes
+    if: ${{ needs.changes.outputs.prefect_flows_changed == 'true' }}
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
     strategy:
       matrix:
-        flows: ${{ fromJson(needs.list-flows.outputs.matrix) }}
-        # flow: ${{ fromJSON(needs.changes.outputs.flows) }}
+        flows: ${{ fromJson(needs.changes.outputs.prefect_flows) }}
     steps:
-
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Set up Python 3.9
         uses: actions/setup-python@v3
         with:
           python-version: 3.9
+
       - name: Python dependencies
         run: |
           pip install s3fs
           pip install -U "prefect>=2.0b"
-      - name: Login to Prefect Cloud 2.0
+
+      - name: Prefect Cloud login
         run: prefect cloud login --key ${{ secrets.PREFECT_API_KEY}} --workspace ${{ env.PREFECT_WORKSPACE }}
-      - name: Validate Prefect version
-        run: prefect version
+
+      - name: AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy flows to S3
+        run: prefect deployment create ${{ matrix.flows }}
+
+  build:
+    needs: changes
+    if: ${{ needs.changes.outputs.code_dependencies_changed == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: ECR build + ECS agent deploy
+        run: echo "rebuilding docker image and ECS service"
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-      - name: Create deployment
-        run: prefect deployment create ${{ matrix.flows }}
+
+      - name: Generate task definition
+        run: aws ecs describe-task-definition --task-definition ${{ env.PROJECT }} --query taskDefinition > task-definition.json
+
+      - name: Upload task definition as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ECS task definition
+          path: task-definition.json
