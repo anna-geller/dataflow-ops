@@ -39,7 +39,7 @@ on:
         options: ['true', 'false']
 
 env:
-  PROJECT: ${{ github.event.inputs.workspace }}
+  PROJECT: ${{ github.event.inputs.project }}
 
 jobs:
   list-flows:
