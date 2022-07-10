@@ -2,14 +2,15 @@ name: Delete ECS Cluster, Prefect agent and ECR repository
 
 on:
   workflow_dispatch:
-    region:
-      description: AWS Region
-      required: true
-      default: us-east-1
-    project:
-      description: Project name (ECS Service)
-      required: true
-      default: prefectdataops
+    inputs:
+      region:
+        description: AWS Region
+        required: true
+        default: us-east-1
+      project:
+        description: Project name (ECS Service)
+        required: true
+        default: prefectdataops
 jobs:
   delete-stack:
     runs-on: ubuntu-latest
