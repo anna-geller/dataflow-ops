@@ -126,7 +126,7 @@ jobs:
       - name: Create new ECR repository using AWS CloudFormation
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
-          name: ${{ github.event.inputs.project }}
+          name: "ecr_${{ github.event.inputs.project }}"
           template: infrastructure/create_ecr_repository.yml
           parameter-overrides: "RepositoryName=${{ github.event.inputs.project }}"
           no-fail-on-empty-changeset: "1"
@@ -156,7 +156,7 @@ jobs:
       - name: Deploy to ECS with AWS CloudFormation
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
-          name: prefect-ecs-cluster-and-agent
+          name: ${{ github.event.inputs.project }}
           template: infrastructure/ecs_cluster_prefect2_agent.yml
           capabilities: CAPABILITY_NAMED_IAM
           parameter-overrides: "cpu=${{ github.event.inputs.cpu }},memory=${{ github.event.inputs.memory }},project=${{ github.event.inputs.project }},cluster=${{ github.event.inputs.cluster }},image=${{ github.event.inputs.image }}"
