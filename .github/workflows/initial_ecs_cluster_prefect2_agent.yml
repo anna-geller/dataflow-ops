@@ -90,7 +90,7 @@ jobs:
 
   create-work-queue:
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.work-queue }} == 'true'
+    if: ${{ github.event.inputs.work-queue == 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -153,13 +153,30 @@ jobs:
           aws ssm put-parameter --type SecureString --name PREFECT_API_URL --value ${{ secrets.PREFECT_API_URL}} --overwrite
           aws ssm put-parameter --type SecureString --name PREFECT_API_KEY --value ${{ secrets.PREFECT_API_KEY}} --overwrite
 
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$PROJECT:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$PROJECT:$IMAGE_TAG
+          echo "::set-output name=image::$ECR_REGISTRY/$PROJECT:$IMAGE_TAG"
+
+      - name: Flow deployments finished
+        run: echo "ECR image ${{ steps.build-image.outputs.image }} built at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
+
       - name: Deploy to ECS with AWS CloudFormation
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
           name: ${{ github.event.inputs.project }}
           template: infrastructure/ecs_cluster_prefect2_agent.yml
           capabilities: CAPABILITY_NAMED_IAM
-          parameter-overrides: "cpu=${{ github.event.inputs.cpu }},memory=${{ github.event.inputs.memory }},project=${{ github.event.inputs.project }},cluster=${{ github.event.inputs.cluster }},image=${{ github.event.inputs.image }}"
+          parameter-overrides: "cpu=${{ github.event.inputs.cpu }},memory=${{ github.event.inputs.memory }},project=${{ github.event.inputs.project }},cluster=${{ github.event.inputs.cluster }},image=${{ steps.build-image.outputs.image }}"
 
       - name: ECS Service Deployment finished
         run: echo "ECS Service Deployment finished at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
@@ -174,4 +191,4 @@ jobs:
           path: task-definition.json
 
       - name: Summary
-        run: echo '### AWS resources successfully redeployed! :rocket:' >> $GITHUB_STEP_SUMMARY
+        run: echo '### AWS resources successfully deployed! :rocket:' >> $GITHUB_STEP_SUMMARY

@@ -98,8 +98,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: ECR build + ECS agent deploy
-        run: echo "rebuilding docker image and ECS service"
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -131,7 +129,6 @@ jobs:
           task-definition: ${{ env.ECS_TASK_DEFINITION }}
           container-name: ${{ env.PROJECT }}
           image: ${{ steps.build-image.outputs.image }}
-
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
