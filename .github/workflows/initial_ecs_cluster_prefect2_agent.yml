@@ -110,7 +110,7 @@ jobs:
         run: prefect cloud login --key ${{ secrets.PREFECT_API_KEY}} --workspace ${{ github.event.inputs.workspace }}
 
       - name: Create a project work-queue
-        run: prefect work-queue create ${{ github.event.inputs.project }}
+        run: prefect work-queue create ${{ github.event.inputs.project }} -t ${{ github.event.inputs.project }}
         continue-on-error: true
 
   ecr-repo:
