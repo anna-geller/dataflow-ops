@@ -1,4 +1,4 @@
-name: Create ECS Cluster, deploy Prefect agent as a service with the same name as the project name
+name: Create ECS Cluster, deploy Prefect agent as an ECS service
 
 on:
   workflow_dispatch:
@@ -37,13 +37,20 @@ on:
         default: 'true'
         type: choice
         options: ['true', 'false']
+
+env:
+  PROJECT: ${{ github.event.inputs.workspace }}
+
 jobs:
   list-flows:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Summary
+        run: echo "### Workflow $GITHUB_WORKFLOW with GITHUB_SHA $GITHUB_SHA" >> $GITHUB_STEP_SUMMARY
       - id: set-matrix
         run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
 
