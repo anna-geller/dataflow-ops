@@ -141,5 +141,11 @@ jobs:
           cluster: ${{ env.ECS_CLUSTER }}
           # wait-for-service-stability: true
 
-      - name: Rendered task definition
-        run: cat ${{ steps.task-def.outputs.task-definition }} >> $GITHUB_STEP_SUMMARY
+      - name: Upload task definition as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ECS task definition
+          path: ${{ steps.task-def.outputs.task-definition }}
+
+      - name: Summary
+        run: echo '### AWS resources successfully redeployed! :rocket:' >> $GITHUB_STEP_SUMMARY
