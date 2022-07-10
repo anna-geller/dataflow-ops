@@ -28,7 +28,7 @@ jobs:
       - name: Delete ECR repository
         continue-on-error: true
         run: |
-          aws ecr delete-repository --repository-name "ecr_${{ github.event.inputs.project}}" --force
+          aws ecr delete-repository --repository-name ${{ github.event.inputs.project}} --force
           aws cloudformation delete-stack --stack-name "ecr_${{ github.event.inputs.project}}"
 
       - name: Delete ECS agent service
