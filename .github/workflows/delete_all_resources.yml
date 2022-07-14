@@ -2,15 +2,10 @@ name: Delete ECS Cluster, Prefect agent and ECR repository
 
 on:
   workflow_dispatch:
-    inputs:
-      region:
-        description: AWS Region
-        required: true
-        default: us-east-1
-      project:
-        description: Project name (ECS Service)
-        required: true
-        default: prefectdataops
+
+env:
+  PROJECT: prefectdataops
+
 jobs:
   delete-stack:
     runs-on: ubuntu-latest
@@ -23,17 +18,17 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ github.event.inputs.region}}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
       - name: Delete ECR repository
         continue-on-error: true
         run: |
-          aws ecr delete-repository --repository-name ${{ github.event.inputs.project}} --force
-          aws cloudformation delete-stack --stack-name "${{ github.event.inputs.project}}-ecr"
+          aws ecr delete-repository --repository-name ${{ env.PROJECT }} --force
+          aws cloudformation delete-stack --stack-name "${{ env.PROJECT }}-ecr"
 
       - name: Delete ECS agent service
         continue-on-error: true
-        run: aws cloudformation delete-stack --stack-name ${{ github.event.inputs.project}}
+        run: aws cloudformation delete-stack --stack-name ${{ env.PROJECT }}
 
       - name: All AWS resources deleted
         run: echo '### All AWS resources deleted! :tada:' >> $GITHUB_STEP_SUMMARY
