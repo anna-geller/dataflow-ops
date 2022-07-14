@@ -1,4 +1,4 @@
-name: Deploy flows to S3 and rebuild code dependencies and ECS agent service
+name: CD - deploy flows to S3 and rebuild code dependencies and ECS agent service
 
 on:
   push:
