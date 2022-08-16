@@ -54,16 +54,6 @@ Storing the YAML file in your project repository with flows is entirely optional
 
 One common use case we anticipate is using the YAML files as build artifacts of the CI/CD process, and relying purely on blocks and CLI as a way to continuously send deployment metadata to the Prefect backend.
 
-# Work queues, agents and deployments relationship: before (left) and now (right)
-
-
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/f5879299-3a24-44aa-8036-23f474bd3505/Untitled.png)
-
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/b653a814-399e-4ccc-bd71-0cd4021deb0b/Untitled.png)
-
-Note that both images mark `manifest_path` as red, since this argument is no longer used and it’s maintained only for backward compatibility with Prefect ≤ 2.0.3.
-
-
 
 # Relationship between work queues, agents and deployments
 
@@ -82,6 +72,7 @@ The change also helps with incremental adoption - users don't have to learn abou
 
 ![WQ](docs/old.png)
 
+Note that both images mark `manifest_path` as red, since this argument is no longer used and it’s maintained only for backward compatibility with Prefect ≤ 2.0.3.
 
 
 # FAQ
