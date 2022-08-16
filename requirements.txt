@@ -1,5 +1,0 @@
-s3fs
-prefect_slack
-prefect_shell
-sqlalchemy
-pandas
