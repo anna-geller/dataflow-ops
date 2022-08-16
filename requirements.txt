@@ -1,0 +1,4 @@
+prefect==2.0.4
+s3fs
+sqlalchemy
+pandas

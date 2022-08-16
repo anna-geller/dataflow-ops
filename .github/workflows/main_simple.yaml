@@ -1,0 +1,92 @@
+name: CD to S3 and Prefect Cloud
+
+on:
+  workflow_dispatch:
+#  push:
+#    branches:
+#      - master
+
+env:
+  PROJECT: dataflowops
+  S3_BLOCK_NAME: prod
+  PREFECT_VERSION: 2.0.4
+
+jobs:
+  set_description:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+  changes:
+    name: Summary of flow and code dependency changes
+    runs-on: ubuntu-latest
+    outputs:
+      prefect_flows: ${{ steps.filter.outputs.flows_files }}
+      prefect_flows_changed: ${{ steps.filter.outputs.flows }}
+      code_dependencies_changed: ${{ steps.filter.outputs.code }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          list-files: json
+          filters: |
+            flows:
+              - added|modified: 'flows/*.py'
+            code:
+              - added|modified|deleted: 'dataflowops/**'
+              - added|modified|deleted: 'requirements.txt'
+              - added|modified|deleted: 'Dockerfile'
+      - name: Generate Markdown Summary
+        run: | 
+          echo Flows: ${{ steps.filter.outputs.flows_files }} >> $GITHUB_STEP_SUMMARY
+          echo Code dependency changes: ${{ steps.filter.outputs.code_files }} >> $GITHUB_STEP_SUMMARY
+  deploy:
+    needs: changes
+    if: ${{ needs.changes.outputs.prefect_flows_changed == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        flows: ${{ fromJson(needs.changes.outputs.prefect_flows) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.9
+
+      - name: Python dependencies
+        run: |
+          pip install prefect==$PREFECT_VERSION
+          pip install s3fs
+          pip install .
+
+      - name: Prefect Cloud login
+        run: |
+          prefect config set PREFECT_API_KEY=${{ secrets.PREFECT_API_KEY}} 
+          prefect config set PREFECT_API_URL=${{ secrets.PREFECT_API_URL}}
+
+      - name: AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Deploy flows to S3
+        id: build
+        run: | 
+          FLOW_NAME=$(basename ${{ matrix.flows }} .py)
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name s3 -t $PROJECT -sb s3/$S3_BLOCK_NAME -v $GITHUB_SHA -o $FLOW_NAME.yaml
+          prefect deployment apply $FLOW_NAME.yaml
+          echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
+
+      - name: Upload task definition as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Deployment YAML manifests
+          path: ${{ steps.build.outputs.flow_manifest }}

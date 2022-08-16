@@ -1,0 +1,22 @@
+# prefect kubernetes manifest flow-run-job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: prod
+  labels:
+    purpose: prefect
+spec:
+  template:
+    spec:
+      completions: 1
+      containers: # the first container is required
+        - env: []
+          name: prefect-job
+          resources:
+            limits:
+              nvidia.com/gpu: "1"
+            requests:
+              cpu: "1"
+              memory: 256M
+      parallelism: 1
+      restartPolicy: Never
