@@ -17,12 +17,12 @@ prefect deployment apply deploy/anonymous.yaml
 prefect deployment run healthcheck/anonymous
 
 # s3/prod block + local process (anonymous block created automatically during build)
-prefect deployment build flows/healthcheck.py:healthcheck --name s3 -q prod -t project -o deploy/s3.yaml -sb s3/prod -v GITHUB_SHA
+prefect deployment build flows/healthcheck.py:healthcheck --name cicd -q prod -t project -o deploy/s3.yaml -sb s3/prod -v GITHUB_SHA
 prefect deployment apply deploy/s3.yaml
 prefect deployment run healthcheck/s3
 
 # s3/prod block + local process (anonymous block created automatically during build)
-prefect deployment build flows/healthcheck.py:healthcheck --name s3 -q prod -t project -o deploy/s3.yaml -sb s3/prod -v GITHUB_SHA
+prefect deployment build flows/healthcheck.py:healthcheck --name cicd -q prod -t project -o deploy/s3.yaml -sb s3/prod -v GITHUB_SHA
 prefect deployment apply deploy/s3.yaml
 prefect deployment run healthcheck/s3
 

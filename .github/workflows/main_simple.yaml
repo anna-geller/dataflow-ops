@@ -81,7 +81,7 @@ jobs:
         id: build
         run: | 
           FLOW_NAME=$(basename ${{ matrix.flows }} .py)
-          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name s3 -q $PROJECT -sb s3/$S3_BLOCK_NAME -v $GITHUB_SHA -o $FLOW_NAME.yaml
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name cicd -q $PROJECT -sb s3/$S3_BLOCK_NAME -v $GITHUB_SHA -o $FLOW_NAME.yaml
           prefect deployment apply $FLOW_NAME.yaml
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
 

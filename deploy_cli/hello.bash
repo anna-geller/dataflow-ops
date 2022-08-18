@@ -23,12 +23,12 @@ prefect deployment apply deploy/anonymous.yaml
 prefect deployment run hello/anonymous
 
 # s3/prod block + local process (anonymous block created automatically during build)
-prefect deployment build flows/hello.py:hello --name s3 -q prod -t project -o deploy/s3.yaml -sb s3/prod -v GITHUB_SHA
+prefect deployment build flows/hello.py:hello --name cicd -q prod -t project -o deploy/s3.yaml -sb s3/prod -v GITHUB_SHA
 prefect deployment apply deploy/s3.yaml
 prefect deployment run hello/s3
 
 # s3/prod block + local process (anonymous block created automatically during build)
-prefect deployment build flows/hello.py:hello --name s3 -q prod -t project -o deploy/s3.yaml -sb s3/prod -v GITHUB_SHA
+prefect deployment build flows/hello.py:hello --name cicd -q prod -t project -o deploy/s3.yaml -sb s3/prod -v GITHUB_SHA
 prefect deployment apply deploy/s3.yaml
 prefect deployment run hello/s3
 
