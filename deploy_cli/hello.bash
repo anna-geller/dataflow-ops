@@ -1,5 +1,5 @@
 # local storage + local process infra block explicit (self-created block)
-prefect deployment build flows/hello.py:hello --name process -q prod -q local -t project \
+prefect deployment build flows/hello.py:hello --name process -q prod -t project \
 -o deploy/process.yaml -ib process/prod -v GITHUB_SHA
 prefect deployment apply deploy/process.yaml
 prefect deployment run hello/process

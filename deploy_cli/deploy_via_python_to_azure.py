@@ -1,17 +1,17 @@
 from flows.healthcheck import healthcheck
 from prefect.deployments import Deployment
-from prefect.filesystems import S3
+from prefect.filesystems import Azure
 
 deployment = Deployment.build_from_flow(
     flow=healthcheck,
-    name="pythonics3",
+    name="pythonicazure",
     description="hi!",
     version="1",
     work_queue_name="prod",
     tags=["project"],
-    storage=S3.load("prod"),
+    storage=Azure.load("prod"),
     infra_overrides=dict(env={"PREFECT_LOGGING_LEVEL": "DEBUG"}),
-    output="pythonics3.yaml",
+    output="azure_python.yaml",
 )
 if __name__ == "__main__":
     print(deployment.apply())

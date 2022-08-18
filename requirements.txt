@@ -1,4 +1,4 @@
-prefect==2.0.4
+prefect==2.1
 s3fs
 sqlalchemy
 pandas

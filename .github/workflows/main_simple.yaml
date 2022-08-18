@@ -1,15 +1,15 @@
-name: CD to S3 and Prefect Cloud
+name: (optional) Simple CD to S3 and Prefect Cloud
 
 on:
   workflow_dispatch:
 #  push:
 #    branches:
-#      - master
+#      - main
 
 env:
   PROJECT: dataflowops
   S3_BLOCK_NAME: prod
-  PREFECT_VERSION: 2.0.4
+  PREFECT_VERSION: 2.1
 
 jobs:
   set_description:
@@ -81,7 +81,7 @@ jobs:
         id: build
         run: | 
           FLOW_NAME=$(basename ${{ matrix.flows }} .py)
-          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name s3 -t $PROJECT -sb s3/$S3_BLOCK_NAME -v $GITHUB_SHA -o $FLOW_NAME.yaml
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name s3 -q $PROJECT -sb s3/$S3_BLOCK_NAME -v $GITHUB_SHA -o $FLOW_NAME.yaml
           prefect deployment apply $FLOW_NAME.yaml
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
 

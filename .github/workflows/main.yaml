@@ -1,14 +1,15 @@
-name: CD to AWS ECS, S3 and Prefect Cloud
+name: 2 Regular CD to AWS ECS, S3 and Prefect Cloud
 
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
+#  push:
+#    branches:
+#      - master
 
 env:
   PROJECT: dataflowops
   S3_BLOCK_NAME: prod
-  PREFECT_VERSION: 2.0.4
+  PREFECT_VERSION: 2.1
   ECS_CLUSTER: prefect2
   ECS_TASK_DEFINITION: task-definition.json
 
@@ -81,7 +82,7 @@ jobs:
         id: build
         run: | 
           FLOW_NAME=$(basename ${{ matrix.flows }} .py)
-          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name s3 -t $PROJECT -sb s3/$S3_BLOCK_NAME -v $GITHUB_SHA -o $FLOW_NAME.yaml
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name s3 -q $PROJECT -sb s3/$S3_BLOCK_NAME -v $GITHUB_SHA -o $FLOW_NAME.yaml
           prefect deployment apply $FLOW_NAME.yaml
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
 

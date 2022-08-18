@@ -9,7 +9,7 @@
                 "-c"
             ],
             "command": [
-                "prefect agent start -t dataflowops"
+                "prefect agent start -q dataflowops"
             ],
             "secrets": [
                 {

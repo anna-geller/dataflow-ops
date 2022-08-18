@@ -153,7 +153,7 @@ Resources:
             - "-c"
           StopTimeout: 120
           Command:
-            - !Sub "prefect agent start -t ${project}"
+            - !Sub "prefect agent start -q ${project}"
           LogConfiguration:
             LogDriver: awslogs
             Options:

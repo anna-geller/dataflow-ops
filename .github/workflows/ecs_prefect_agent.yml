@@ -1,4 +1,4 @@
-name: Create ECS Cluster, deploy Prefect agent as an ECS service
+name: 1 Initial - Deploy Prefect agent to ECS
 
 on:
   workflow_dispatch:
@@ -27,7 +27,7 @@ on:
 env:
   PROJECT: dataflowops
   ECS_CLUSTER: prefect2
-  PREFECT_VERSION: 2.0.4
+  PREFECT_VERSION: 2.1
 
 jobs:
   blocks:
@@ -120,7 +120,7 @@ jobs:
         id: build
         run: |
           FLOW_NAME=$(basename ${{ matrix.flows }} .py)
-          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name s3 -t ${{ env.PROJECT }} -sb s3/prod -v $GITHUB_SHA -o $FLOW_NAME.yaml
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name s3 -q ${{ env.PROJECT }} -sb s3/prod -v $GITHUB_SHA -o $FLOW_NAME.yaml
           prefect deployment apply $FLOW_NAME.yaml
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
 
