@@ -1,4 +1,4 @@
-# Template for Prefect deployments with CI/CD and one-click agent deployment
+# Template for Prefect deployments with Continuous Deployment GitHub Actions workflow and one-click agent deployment
 
 The goal of this recipe is to have one Prefect agent (running on AWS ECS Fargate) with shared core package dependencies per project. This means that:
 
