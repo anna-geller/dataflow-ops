@@ -12,6 +12,10 @@ Make sure to adjust your AWS account ID and your default region in the ``task-de
 
 # Deployment CLI examples based on your platform, storage and infrastructure
 
+<details>
+  <summary>Table with examples</summary>
+  
+
 | Storage Block | Infrastructure Block | End Result | CLI Build Command for hello.py flow with flow function hello | Platform |
 | --- | --- | --- | --- | --- |
 | N/A | N/A | Local storage and local process on the same machine from which you created a deployment | prefect deployment build hello.py:hello -n implicit -q dev | Local/VM |
@@ -28,3 +32,5 @@ Make sure to adjust your AWS account ID and your default region in the ``task-de
 | -sb azure/dev | -ib process/dev | Azure storage block and local Process block - this setup allows you to use a remote agent e.g. running on Azure VM instance; any flow run from this deployment will run as a local process on that VM and Prefect will pull code from Azure storage at runtime | prefect deployment build hello.py:hello -n az-process -q dev -sb azure/dev -ib process/dev | Azure Blob Storage + Azure VM |
 | -sb azure/dev | -ib docker-container/dev | Azure storage block and DockerContainer block - this setup allows you to use a remote agent e.g. running on Azure VM instance; any flow run from this deployment will run as a docker container on that VM and Prefect will pull code from Azure storage at runtime | prefect deployment build hello.py:hello -n az-docker -q dev -sb azure/dev -ib docker-container/dev | Azure Blob Storage + Azure VM |
 | -sb azure/dev | -ib kubernetes-job/dev | GCS storage block and KubernetesJob block - this setup allows you to use a remote agent running as Kubernetes deployment e.g. running on Azure AKS cluster; any flow run from this deployment will run as a Kubernetes job pod within that cluster and Prefect will pull code from Azure storage at runtime | prefect deployment build hello.py:hello -n az-k8s -q dev -sb azure/dev -ib kubernetes-job/dev | Azure Blob Storage + AKS |
+
+</details> 
