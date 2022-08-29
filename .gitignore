@@ -129,6 +129,5 @@ dmypy.json
 # Editors
 .idea/
 .vscode/
-.idea/
 .tmp/
 deploy/
