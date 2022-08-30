@@ -152,3 +152,4 @@ requirements-dev.txt
 setup.py
 task-definition.json
 *.md
+*.yaml
