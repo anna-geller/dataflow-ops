@@ -9,7 +9,7 @@ on:
 env:
   PROJECT: dataflowops
   S3_BLOCK_NAME: prod
-  PREFECT_VERSION: 2.1
+  PREFECT_VERSION: 2.*
 
 jobs:
   set_description:
@@ -61,7 +61,7 @@ jobs:
 
       - name: Python dependencies
         run: |
-          pip install prefect==$PREFECT_VERSION
+          pip install -U prefect==$PREFECT_VERSION
           pip install s3fs
           pip install .
 
@@ -85,7 +85,7 @@ jobs:
           prefect deployment apply $FLOW_NAME.yaml
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
 
-      - name: Upload task definition as artifact
+      - name: Upload deployment manifest as artifact
         uses: actions/upload-artifact@v3
         with:
           name: Deployment YAML manifests
