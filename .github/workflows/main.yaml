@@ -9,7 +9,7 @@ on:
 env:
   PROJECT: dataflowops
   S3_BLOCK_NAME: prod
-  PREFECT_VERSION: 2.1
+  PREFECT_VERSION: 2.*
   ECS_CLUSTER: prefect2
   ECS_TASK_DEFINITION: task-definition.json
 
@@ -62,7 +62,7 @@ jobs:
 
       - name: Python dependencies
         run: |
-          pip install prefect==$PREFECT_VERSION
+          pip install -U prefect==$PREFECT_VERSION
           pip install s3fs
           pip install .
 
