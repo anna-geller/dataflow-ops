@@ -86,7 +86,7 @@ jobs:
           prefect deployment apply $FLOW_NAME.yaml
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
 
-      - name: Upload task definition as artifact
+      - name: Upload deployment manifest as artifact
         uses: actions/upload-artifact@v3
         with:
           name: Deployment YAML manifests
