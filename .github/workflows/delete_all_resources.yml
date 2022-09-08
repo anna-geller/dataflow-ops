@@ -25,10 +25,13 @@ jobs:
         run: |
           aws ecr delete-repository --repository-name ${{ env.PROJECT }} --force
           aws cloudformation delete-stack --stack-name "${{ env.PROJECT }}-ecr"
+          aws cloudformation wait stack-delete-complete --stack-name "${{ env.PROJECT }}-ecr"
 
       - name: Delete ECS agent service
         continue-on-error: true
-        run: aws cloudformation delete-stack --stack-name ${{ env.PROJECT }}
+        run: |
+          aws cloudformation delete-stack --stack-name ${{ env.PROJECT }}
+          aws cloudformation wait stack-delete-complete --stack-name ${{ env.PROJECT }}
 
       - name: All AWS resources deleted
         run: echo '### All AWS resources deleted! :tada:' >> $GITHUB_STEP_SUMMARY
