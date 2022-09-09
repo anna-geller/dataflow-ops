@@ -23,11 +23,21 @@ on:
         description: Name of the S3 block
         required: true
         default: 'prod'
-
+      prefect-version:
+        description: Prefect version for flows
+        required: true
+        default: '2.*'
+        type: string
+      aws-region:
+        description: AWS Region
+        required: true
+        default: 'us-east-1'
+        type: string
 env:
   ECS_CLUSTER: prefect
   PROJECT: dataflowops
-  PREFECT_VERSION: 2.2
+  PREFECT_VERSION: ${{ github.event.inputs.prefect-version }}
+  AWS_DEFAULT_REGION: ${{ github.event.inputs.aws-region }}
 
 jobs:
   blocks:
@@ -44,7 +54,7 @@ jobs:
 
       - name: Python dependencies
         run: |
-          pip install prefect==$PREFECT_VERSION
+          pip install -U "prefect==$PREFECT_VERSION"
           pip install s3fs
 
       - name: Prefect Cloud login
@@ -57,7 +67,8 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          mask-aws-account-id: 'no'
 
       - name: Build S3 block
         id: s3
@@ -99,7 +110,7 @@ jobs:
 
       - name: Python dependencies
         run: |
-          pip install prefect==$PREFECT_VERSION
+          pip install -U "prefect==$PREFECT_VERSION"
           pip install s3fs
           pip install .
 
@@ -113,14 +124,14 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          mask-aws-account-id: 'no'
 
       - name: Deploy flows to S3
         id: build
         run: |
           FLOW_NAME=$(basename ${{ matrix.flows }} .py)
-          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name cicd -q ${{ env.PROJECT }} -sb s3/prod -v $GITHUB_SHA -o $FLOW_NAME.yaml
-          prefect deployment apply $FLOW_NAME.yaml
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name ${{ env.PROJECT }} -q ${{ env.PROJECT }} -a -sb s3/prod -v $GITHUB_SHA -o $FLOW_NAME.yaml
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
 
       - name: Upload YAML deployment manifest as artifact
@@ -140,7 +151,8 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          mask-aws-account-id: 'no'
       - name: Create new ECR repository using AWS CloudFormation
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
@@ -164,7 +176,8 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          mask-aws-account-id: 'no'
 
       - name: Add Prefect Cloud Secrets to SSM Parameter Store (needed for container in ECS task)
         id: aws
@@ -197,7 +210,7 @@ jobs:
           name: ${{ env.PROJECT }}
           template: infrastructure/ecs_cluster_prefect_agent.yml
           capabilities: CAPABILITY_NAMED_IAM
-          parameter-overrides: "cpu=${{ github.event.inputs.cpu }},memory=${{ github.event.inputs.memory }},project=${{ env.PROJECT }},cluster=${{ env.ECS_CLUSTER }},image=${{ steps.build-image.outputs.image }},awsaccountid=${{steps.aws.outputs.account_id}},region=${{ secrets.AWS_DEFAULT_REGION }}"
+          parameter-overrides: "cpu=${{ github.event.inputs.cpu }},memory=${{ github.event.inputs.memory }},project=${{ env.PROJECT }},cluster=${{ env.ECS_CLUSTER }},image=${{ steps.build-image.outputs.image }},awsaccountid=${{steps.aws.outputs.account_id}},region=${{ env.AWS_DEFAULT_REGION }}"
 
       - name: ECS Service Deployment finished
         run: echo "ECS Service Deployment finished at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
