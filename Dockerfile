@@ -5,3 +5,4 @@ COPY setup.py .
 COPY requirements.txt .
 COPY dataflowops/ /opt/prefect/dataflowops/
 RUN pip install .
+RUN prefect block register -m prefect_aws.ecs

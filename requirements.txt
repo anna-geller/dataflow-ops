@@ -1,3 +1,4 @@
 s3fs
+prefect-aws
 sqlalchemy
 pandas
