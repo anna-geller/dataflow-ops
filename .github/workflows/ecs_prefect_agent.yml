@@ -43,7 +43,7 @@ env:
 
 jobs:
   ecr-repo:
-    name: Create ECR repository, build and push the image
+    name: ECR Repo & Image
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.build-image.outputs.image }}
@@ -88,11 +88,9 @@ jobs:
         run: echo "ECR image ${{ steps.build-image.outputs.image }} built at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
 
   prefect-agent-ecs:
-    name: ECS cluster & Prefect agent service
+    name: ECS Cluster & Prefect Agent
     runs-on: ubuntu-latest
     needs: ecr-repo
-    outputs:
-      accountid: ${{ steps.aws.outputs.accountid }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -108,7 +106,7 @@ jobs:
       - name: Add Prefect Cloud Secrets to SSM Parameter Store (needed for container in ECS task)
         id: aws
         run: |
-          aws ssm put-parameter --type SecureString --name PREFECT_WORKSPACE --value ${{secrets.PREFECT_WORKSPACE}} --overwrite
+          aws ssm put-parameter --type SecureString --name PREFECT_WORKSPACE --value ${{ secrets.PREFECT_WORKSPACE }} --overwrite
           aws ssm put-parameter --type SecureString --name PREFECT_API_KEY --value ${{ secrets.PREFECT_API_KEY }} --overwrite
           export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
           echo ::set-output name=accountid::$AWS_ACCOUNT_ID
@@ -138,7 +136,7 @@ jobs:
         run: echo 'AWS ECS agent successfully deployed and ready to run your flows! :rocket:' >> $GITHUB_STEP_SUMMARY
 
   blocks:
-    name: Create blocks
+    name: Prefect Blocks
     runs-on: ubuntu-latest
     needs: ecr-repo
     steps:
@@ -172,6 +170,7 @@ jobs:
       - name: Prefect Blocks
         id: aws_ecs_ecs_blocks
         run: |
+          export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
           cat <<EOF > aws_ecs_blocks.py
           from prefect.filesystems import S3
           from prefect_aws.ecs import ECSTask, AwsCredentials
@@ -184,8 +183,9 @@ jobs:
           cluster_ = "${{ env.ECS_CLUSTER }}"
           cpu_ = "${{ github.event.inputs.cpu }}"
           memory_ = "${{ github.event.inputs.memory }}"
-          exec_role = "arn:aws:iam::${{needs.prefect-agent-ecs.outputs.accountid}}:role/dataflowops_ecs_execution_role"
-          task_role = "arn:aws:iam::${{needs.prefect-agent-ecs.outputs.accountid}}:role/dataflowops_ecs_execution_role"
+          aws_acc_id = "$AWS_ACCOUNT_ID"
+          exec_role = f"arn:aws:iam::{aws_acc_id}:role/dataflowops_ecs_execution_role"
+          task_role = f"arn:aws:iam::{aws_acc_id}:role/dataflowops_ecs_execution_role"
           
           aws_creds = AwsCredentials(aws_access_key_id=id_, aws_secret_access_key=key_)
           aws_creds.save(block_, overwrite=True)
@@ -212,6 +212,7 @@ jobs:
         run: echo "AWS and ECS blocks built at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
 
   list-flows:
+    name: List Prefect flows
     runs-on: ubuntu-latest
     needs: blocks
     outputs:
@@ -223,6 +224,7 @@ jobs:
         run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
 
   deploy:
+    name: Deploy
     needs: list-flows
     runs-on: ubuntu-latest
     strategy:
