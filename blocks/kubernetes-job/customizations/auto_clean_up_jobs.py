@@ -6,3 +6,4 @@ k8s_job = KubernetesJob(
         {"op": "add", "path": "/spec/ttlSecondsAfterFinished", "value": 10}
     ],
 )
+k8s_job.save("prod")

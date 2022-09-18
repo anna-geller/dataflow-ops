@@ -59,12 +59,19 @@ prefect deployment build -n prod -q prod -sb gcs/prod -ib process/prod -a flows/
 
 # Azure ---------------------------------------------------------------
 # upload flow code to Azure storage block + deploy flow as Local Process infra block
-python blocks/gcs.py
+python blocks/azure.py
 python blocks/process.py
 prefect deployment build -n prod -q prod -sb azure/prod -ib process/prod -a flows/healthcheck.py:healthcheck
 prefect deployment build -n prod -q prod -sb azure/prod -ib process/prod -a flows/parametrized.py:parametrized --skip-upload
 prefect deployment build -n prod -q prod -sb azure/prod -ib process/prod -a flows/hello.py:hello --skip-upload
 
+# Azure + Docker ---------------------------------------------------------------
+# upload flow code to Azure storage block + deploy flow as Local Process infra block
+python blocks/azure.py
+python blocks/docker_az.py
+prefect deployment build -n prod -q prod -sb azure/prod -ib docker-container/az -a flows/healthcheck.py:healthcheck
+prefect deployment build -n prod -q prod -sb azure/prod -ib docker-container/az -a flows/parametrized.py:parametrized --skip-upload
+prefect deployment build -n prod -q prod -sb azure/prod -ib docker-container/az -a flows/hello.py:hello --skip-upload
 # ---------------------------------------------------------------
 # run all flows
 prefect deployment run healthcheck/prod

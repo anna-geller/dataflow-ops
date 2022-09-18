@@ -2,7 +2,6 @@ from prefect import task, flow
 from prefect import get_run_logger
 from dataflowops.postgres_utils import get_db_connection_string
 from flows.healthcheck import healthcheck  # to show how subflows can be packaged and imported
-import pandas  # to demonstrate that imports work correctly
 
 
 @task
