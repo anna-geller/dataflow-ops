@@ -35,14 +35,14 @@ on:
         type: string
 
 env:
+  PROJECT: dataflowops
   ECS_CLUSTER: prefect
-  PROJECT: dataflowops-prod
-  PREFECT_VERSION: ${{ github.event.inputs.prefect-version }}
-  AWS_DEFAULT_REGION: ${{ github.event.inputs.aws-region }}
   BLOCK: ${{ github.event.inputs.block_name }}
+  AWS_REGION: ${{ github.event.inputs.aws-region }}
+  PREFECT_VERSION: ${{ github.event.inputs.prefect-version }}
 
 jobs:
-  ecr-repo: # used by flows only; the agent uses image provided as input above
+  ecr-repo:
     name: Create ECR repository, build and push the image
     runs-on: ubuntu-latest
     outputs:
@@ -56,7 +56,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
           mask-aws-account-id: 'no'
 
       - name: Create new ECR repository using AWS CloudFormation
@@ -92,7 +92,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: ecr-repo
     outputs:
-      arn: ${{ steps.task-definition.outputs.arn }}
+      accountid: ${{ steps.aws.outputs.accountid }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -102,7 +102,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
           mask-aws-account-id: 'no'
 
       - name: Add Prefect Cloud Secrets to SSM Parameter Store (needed for container in ECS task)
@@ -111,7 +111,7 @@ jobs:
           aws ssm put-parameter --type SecureString --name PREFECT_WORKSPACE --value ${{secrets.PREFECT_WORKSPACE}} --overwrite
           aws ssm put-parameter --type SecureString --name PREFECT_API_KEY --value ${{ secrets.PREFECT_API_KEY }} --overwrite
           export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
-          echo ::set-output name=account_id::$AWS_ACCOUNT_ID
+          echo ::set-output name=accountid::$AWS_ACCOUNT_ID
 
       - name: Deploy to ECS with AWS CloudFormation
         uses: aws-actions/aws-cloudformation-github-deploy@v1
@@ -119,17 +119,14 @@ jobs:
           name: ${{ env.PROJECT }}
           template: infrastructure/ecs_cluster_prefect_agent.yml
           capabilities: CAPABILITY_NAMED_IAM
-          parameter-overrides: "cpu=${{ github.event.inputs.cpu }},memory=${{ github.event.inputs.memory }},project=${{ env.PROJECT }},cluster=${{ env.ECS_CLUSTER }},image=${{ needs.ecr-repo.outputs.image }},awsaccountid=${{steps.aws.outputs.account_id}},region=${{ env.AWS_DEFAULT_REGION }}"
+          parameter-overrides: "cpu=${{ github.event.inputs.cpu }},memory=${{ github.event.inputs.memory }},project=${{ env.PROJECT }},cluster=${{ env.ECS_CLUSTER }},image=${{ needs.ecr-repo.outputs.image }},awsaccountid=${{steps.aws.outputs.accountid}},region=${{ env.AWS_REGION }}"
 
       - name: ECS Service Deployment finished
         run: echo "ECS Service Deployment finished at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
 
       - name: Generate task definition
         id: task-definition
-        run: |
-          aws ecs describe-task-definition --task-definition ${{ env.PROJECT }} --query taskDefinition > task-definition.json
-          ARN=$(aws ecs describe-task-definition --task-definition ${{ env.PROJECT }} --query taskDefinition.taskDefinitionArn)
-          echo "::set-output name=arn::$ARN"
+        run: aws ecs describe-task-definition --task-definition ${{ env.PROJECT }} --query taskDefinition > task-definition.json
 
       - name: Upload task definition as artifact
         uses: actions/upload-artifact@v3
@@ -143,7 +140,7 @@ jobs:
   blocks:
     name: Create blocks
     runs-on: ubuntu-latest
-    needs: prefect-agent-ecs
+    needs: ecr-repo
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -156,7 +153,8 @@ jobs:
       - name: Python dependencies
         run: |
           pip install -U "prefect==$PREFECT_VERSION"
-          pip install s3fs
+          pip install s3fs prefect-aws
+          prefect block register -m prefect_aws.ecs
 
       - name: Prefect Cloud login
         run: |
@@ -168,28 +166,46 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
           mask-aws-account-id: 'no'
 
-      - name: Build S3 block
-        id: s3
-        run: |
-          cat <<EOF > s3_block.py
-          from prefect.filesystems import S3
-          s3 = S3(bucket_path="${{ github.event.inputs.s3_path }}", aws_access_key_id="${{ secrets.AWS_ACCESS_KEY_ID }}", aws_secret_access_key="${{ secrets.AWS_SECRET_ACCESS_KEY }}")
-          s3.save("${{ env.BLOCK }}", overwrite=True)
-          EOF
-          python s3_block.py
-      - name: Build ECS block
-        id: ecs
+      - name: Prefect Blocks
+        id: aws_ecs_ecs_blocks
         run: |
           cat <<EOF > aws_ecs_blocks.py
+          from prefect.filesystems import S3
           from prefect_aws.ecs import ECSTask, AwsCredentials
-          aws_credentials_block = AwsCredentials(aws_access_key_id="${{ secrets.AWS_ACCESS_KEY_ID }}", aws_secret_access_key="${{ secrets.AWS_SECRET_ACCESS_KEY }}")
-          aws_credentials_block.save("${{ env.BLOCK }}", overwrite=True)
           
-          ecs = ECSTask(aws_credentials=aws_credentials_block, image=None, task_definition_arn=${{ needs.prefect-agent-ecs.outputs.arn }}, stream_output=True, configure_cloudwatch_logs=True, cluster="${{env.ECS_CLUSTER}}")
-          ecs.save("${{ env.BLOCK }}", overwrite=True)
+          id_ = "${{ secrets.AWS_ACCESS_KEY_ID }}"
+          key_ = "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+          path_ = "${{ github.event.inputs.s3_path }}"
+          img_ = "${{ needs.ecr-repo.outputs.image }}"
+          block_ = "${{ env.BLOCK }}"
+          cluster_ = "${{ env.ECS_CLUSTER }}"
+          cpu_ = "${{ github.event.inputs.cpu }}"
+          memory_ = "${{ github.event.inputs.memory }}"
+          exec_role = "arn:aws:iam::${{needs.prefect-agent-ecs.outputs.accountid}}:role/dataflowops_ecs_execution_role"
+          task_role = "arn:aws:iam::${{needs.prefect-agent-ecs.outputs.accountid}}:role/dataflowops_ecs_execution_role"
+          
+          aws_creds = AwsCredentials(aws_access_key_id=id_, aws_secret_access_key=key_)
+          aws_creds.save(block_, overwrite=True)
+          
+          s3 = S3(bucket_path=path_, aws_access_key_id=id_, aws_secret_access_key=key_)
+          s3.save(block_, overwrite=True)
+          
+          ecs = ECSTask(
+              aws_credentials=aws_creds,
+              image=img_,
+              cpu=cpu_,
+              memory=memory_,
+              stream_output=True,
+              configure_cloudwatch_logs=True,
+              cluster=cluster_,
+              execution_role_arn=exec_role,
+              task_role_arn=task_role,
+              auto_deregister_task_definition=False,
+          )
+          ecs.save(block_, overwrite=True)
           EOF
           python aws_ecs_blocks.py
       - name: Blocks creation finished
@@ -237,7 +253,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
           mask-aws-account-id: 'no'
 
       - name: Deploy flows to S3

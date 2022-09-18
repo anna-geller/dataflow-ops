@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  PROJECT: dataflowops-prod
+  PROJECT: dataflowops
 
 jobs:
   delete-stack:
