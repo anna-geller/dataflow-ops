@@ -68,8 +68,8 @@ jobs:
 
       - name: Prefect Cloud login
         run: |
-          prefect config set PREFECT_API_KEY=${{ secrets.PREFECT_API_KEY}} 
-          prefect config set PREFECT_API_URL=${{ secrets.PREFECT_API_URL}}
+          prefect config set PREFECT_API_KEY=${{secrets.PREFECT_API_KEY}} 
+          prefect config set PREFECT_API_URL=${{secrets.PREFECT_API_URL}}
 
       - name: AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -110,8 +110,8 @@ jobs:
 
       - name: Add Secrets to SSM Parameter Store (needed for container in ECS task)
         run: |
-          aws ssm put-parameter --type SecureString --name PREFECT_API_URL --value ${{ secrets.PREFECT_API_URL}} --overwrite
-          aws ssm put-parameter --type SecureString --name PREFECT_API_KEY --value ${{ secrets.PREFECT_API_KEY}} --overwrite
+          aws ssm put-parameter --type SecureString --name PREFECT_API_URL --value ${{secrets.PREFECT_API_URL}} --overwrite
+          aws ssm put-parameter --type SecureString --name PREFECT_API_KEY --value ${{secrets.PREFECT_API_KEY}} --overwrite
 
       - name: Login to Amazon ECR
         id: login-ecr

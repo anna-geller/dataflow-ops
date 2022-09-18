@@ -67,8 +67,8 @@ jobs:
 
       - name: Prefect Cloud login
         run: |
-          prefect config set PREFECT_API_KEY=${{ secrets.PREFECT_API_KEY}} 
-          prefect config set PREFECT_API_URL=${{ secrets.PREFECT_API_URL}}
+          prefect config set PREFECT_API_KEY=${{secrets.PREFECT_API_KEY}} 
+          prefect config set PREFECT_API_URL=${{secrets.PREFECT_API_URL}}
 
       - name: AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
