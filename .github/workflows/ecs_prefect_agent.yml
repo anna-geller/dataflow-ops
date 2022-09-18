@@ -188,7 +188,7 @@ jobs:
           aws_credentials_block = AwsCredentials(aws_access_key_id="${{ secrets.AWS_ACCESS_KEY_ID }}", aws_secret_access_key="${{ secrets.AWS_SECRET_ACCESS_KEY }}")
           aws_credentials_block.save("${{ env.BLOCK }}", overwrite=True)
           
-          ecs = ECSTask(aws_credentials=aws_credentials_block, image="${{ needs.ecr-repo.outputs.image }}", task_definition_arn="${{ needs.prefect-agent-ecs.outputs.arn }}", stream_output=True, configure_cloudwatch_logs=True,cluster="${{env.ECS_CLUSTER}}")
+          ecs = ECSTask(aws_credentials=aws_credentials_block, image=None, task_definition_arn=${{ needs.prefect-agent-ecs.outputs.arn }}, stream_output=True, configure_cloudwatch_logs=True, cluster="${{env.ECS_CLUSTER}}")
           ecs.save("${{ env.BLOCK }}", overwrite=True)
           EOF
           python aws_ecs_blocks.py
