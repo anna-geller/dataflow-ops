@@ -110,7 +110,7 @@ jobs:
 
       - name: Add Secrets to SSM Parameter Store (needed for container in ECS task)
         run: |
-          aws ssm put-parameter --type SecureString --name PREFECT_API_URL --value ${{secrets.PREFECT_API_URL}} --overwrite
+          aws ssm put-parameter --type SecureString --name PREFECT_WORKSPACE --value ${{secrets.PREFECT_WORKSPACE}} --overwrite
           aws ssm put-parameter --type SecureString --name PREFECT_API_KEY --value ${{ secrets.PREFECT_API_KEY }} --overwrite
 
       - name: Login to Amazon ECR

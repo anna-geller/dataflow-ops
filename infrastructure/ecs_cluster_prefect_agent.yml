@@ -190,8 +190,8 @@ Resources:
               awslogs-group: !Ref PrefectLogGroup
               awslogs-stream-prefix: !Ref project
           Secrets:
-            - Name: PREFECT_API_URL
-              ValueFrom: !Sub "arn:aws:ssm:${region}:${awsaccountid}:parameter/PREFECT_API_URL"
+            - Name: PREFECT_WORKSPACE
+              ValueFrom: !Sub "arn:aws:ssm:${region}:${awsaccountid}:parameter/PREFECT_WORKSPACE"
             - Name: PREFECT_API_KEY
               ValueFrom: !Sub "arn:aws:ssm:${region}:${awsaccountid}:parameter/PREFECT_API_KEY"
       RequiresCompatibilities:

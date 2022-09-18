@@ -19,8 +19,8 @@ on:
         description: S3 path in the format bucket/path
         required: true
         default: 'prefect-orion/prod'
-      s3_block_name:
-        description: Name of the S3 block
+      block_name:
+        description: Name of the S3 and ECS blocks
         required: true
         default: 'prod'
       prefect-version:
@@ -36,9 +36,10 @@ on:
 
 env:
   ECS_CLUSTER: prefect
-  PROJECT: dataflowops
+  PROJECT: dataflowops-prod
   PREFECT_VERSION: ${{ github.event.inputs.prefect-version }}
   AWS_DEFAULT_REGION: ${{ github.event.inputs.aws-region }}
+  BLOCK: ${{ github.event.inputs.block_name }}
 
 jobs:
   blocks:
@@ -77,7 +78,7 @@ jobs:
           cat <<EOF > s3_block.py
           from prefect.filesystems import S3
           s3 = S3(bucket_path="${{ github.event.inputs.s3_path }}", aws_access_key_id="${{ secrets.AWS_ACCESS_KEY_ID }}", aws_secret_access_key="${{ secrets.AWS_SECRET_ACCESS_KEY }}")
-          s3.save("${{ github.event.inputs.s3_block_name }}", overwrite=True)
+          s3.save("${{ env.BLOCK }}", overwrite=True)
           EOF
           python s3_block.py
       - name: Blocks creation finished
@@ -132,7 +133,8 @@ jobs:
         id: build
         run: |
           FLOW_NAME=$(basename ${{ matrix.flows }} .py)
-          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name ${{ env.PROJECT }} -q ${{ env.PROJECT }} -a -sb s3/prod -v $GITHUB_SHA -o $FLOW_NAME.yaml
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -ib ecs-task/${{ env.BLOCK }} -sb s3/${{ env.BLOCK }} \
+          -n ${{ env.PROJECT }} -q ${{ env.PROJECT }} -v $GITHUB_SHA -o $FLOW_NAME.yaml -a
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
 
       - name: Upload YAML deployment manifest as artifact
@@ -183,7 +185,7 @@ jobs:
       - name: Add Prefect Cloud Secrets to SSM Parameter Store (needed for container in ECS task)
         id: aws
         run: |
-          aws ssm put-parameter --type SecureString --name PREFECT_API_URL --value ${{secrets.PREFECT_API_URL}} --overwrite
+          aws ssm put-parameter --type SecureString --name PREFECT_WORKSPACE --value ${{secrets.PREFECT_WORKSPACE}} --overwrite
           aws ssm put-parameter --type SecureString --name PREFECT_API_KEY --value ${{ secrets.PREFECT_API_KEY }} --overwrite
           export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
           echo ::set-output name=account_id::$AWS_ACCOUNT_ID
