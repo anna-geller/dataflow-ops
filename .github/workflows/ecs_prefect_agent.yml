@@ -265,6 +265,9 @@ jobs:
           prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -ib ecs-task/${{ env.BLOCK }} -sb s3/${{ env.BLOCK }} \
           -n ${{ env.PROJECT }} -q ${{ env.PROJECT }} -v $GITHUB_SHA -o $FLOW_NAME.yaml -a
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
+          
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME \
+          -n ${{ env.PROJECT }}-local -q ${{ env.PROJECT }} -v $GITHUB_SHA -o $FLOW_NAME_local.yaml -a
 
       - name: Upload YAML deployment manifest as artifact
         uses: actions/upload-artifact@v3

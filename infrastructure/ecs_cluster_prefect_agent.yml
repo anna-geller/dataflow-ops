@@ -145,24 +145,24 @@ Resources:
                   - ec2:DescribeSubnets
                   - ec2:DescribeVpcs
                   - ssm:GetParameters
-#                  - ec2:AuthorizeSecurityGroupIngress
-#                  - ec2:CreateSecurityGroup
-#                  - ec2:CreateTags
-#                  - ec2:DescribeNetworkInterfaces
-#                  - ec2:DescribeSecurityGroups
-#                  - ec2:DeleteSecurityGroup
-#                  - ecs:CreateCluster
-#                  - ecs:DeleteCluster
-#                  - ecs:DescribeClusters
-#                  - ecs:DescribeTaskDefinition
-#                  - ecs:ListAccountSettings
-#                  - ecs:ListClusters
-#                  - ecs:ListTaskDefinitions
-#                  - ecs:StopTask
-#                  - iam:PassRole
-#                  - logs:CreateLogStream
-#                  - logs:PutLogEvents
-#                  - logs:DescribeLogGroups
+                  - ec2:AuthorizeSecurityGroupIngress
+                  - ec2:CreateSecurityGroup
+                  - ec2:CreateTags
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DeleteSecurityGroup
+                  - ecs:CreateCluster
+                  - ecs:DeleteCluster
+                  - ecs:DescribeClusters
+                  - ecs:DescribeTaskDefinition
+                  - ecs:ListAccountSettings
+                  - ecs:ListClusters
+                  - ecs:ListTaskDefinitions
+                  - ecs:StopTask
+                  - iam:PassRole
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
                 Resource: "*"
 
   PrefectTaskDefinition:
@@ -181,6 +181,9 @@ Resources:
             - "bash"
             - "-c"
           StopTimeout: 120
+          Environment:
+            - Name: PREFECT_LOGGING_LEVEL
+              Value: DEBUG
           Command:
             - !Sub "prefect agent start -q ${project}"
           LogConfiguration:
