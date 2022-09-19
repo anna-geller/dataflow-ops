@@ -61,7 +61,7 @@ jobs:
       - name: Prefect Cloud login
         run: |
           prefect config set PREFECT_API_KEY=${{ secrets.PREFECT_API_KEY }} 
-          prefect cloud workspace set --workspace "${{ secrets.PREFECT_WORKSPACE }}"
+          prefect config set PREFECT_API_URL=${{ secrets.PREFECT_API_URL }}
 
       - name: AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -118,7 +118,7 @@ jobs:
       - name: Prefect Cloud login
         run: |
           prefect config set PREFECT_API_KEY=${{ secrets.PREFECT_API_KEY }} 
-          prefect cloud workspace set --workspace "${{ secrets.PREFECT_WORKSPACE }}"
+          prefect config set PREFECT_API_URL=${{ secrets.PREFECT_API_URL }}
 
       - name: AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -183,7 +183,7 @@ jobs:
       - name: Add Prefect Cloud Secrets to SSM Parameter Store (needed for container in ECS task)
         id: aws
         run: |
-          aws ssm put-parameter --type SecureString --name PREFECT_WORKSPACE --value ${{secrets.PREFECT_WORKSPACE}} --overwrite
+          aws ssm put-parameter --type SecureString --name PREFECT_API_URL --value ${{ secrets.PREFECT_API_URL }} --overwrite
           aws ssm put-parameter --type SecureString --name PREFECT_API_KEY --value ${{ secrets.PREFECT_API_KEY }} --overwrite
           export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
           echo ::set-output name=account_id::$AWS_ACCOUNT_ID
