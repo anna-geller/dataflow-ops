@@ -12,7 +12,7 @@ def say_hi(user_name: str, question: str, answer: Any) -> None:
 
 @flow
 def parametrized(
-    user: str = "Marvin", question: str = "ultimate", answer: Any = 42
+    user: str = "Marvin", question: str = "Ultimate", answer: Any = 42
 ) -> None:
     say_hi(user, question, answer)
 
