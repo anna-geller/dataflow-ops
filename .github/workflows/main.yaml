@@ -15,7 +15,7 @@ env:
 
 jobs:
   changes:
-    name: Summary of flow and code dependency changes
+    name: Code & dependency changes
     runs-on: ubuntu-latest
     outputs:
       prefect_flows: ${{ steps.filter.outputs.flows_files }}

@@ -4,7 +4,7 @@ import platform
 
 
 @task
-def say_hi(user_name: str, question: str, answer: Any) -> None:
+def say_hi(user_name: str, question: str, answer: str) -> None:
     logger = get_run_logger()
     logger.info("Hello from Prefect, %s! 👋", user_name)
     logger.info("The answer to the %s question is %s! 🤖", question, answer)
