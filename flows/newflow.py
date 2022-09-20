@@ -15,7 +15,9 @@ def say_hi(user_name: str, question: str, answer: str) -> None:
 
 @flow
 def newflow(
-    user: str = "NewFlow", question: str = "origin", answer: str = "CI/CD"
+    user: str = "NewFlow",
+    question: str = "origin",
+    answer: str = "CI/CD with GitHub Actions",
 ) -> None:
     say_hi(user, question, answer)
 

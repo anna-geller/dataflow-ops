@@ -2,9 +2,9 @@ name: 2 CD to AWS ECS, S3 and Prefect Cloud (Regular automated process)
 
 on:
   workflow_dispatch:
-#  push:
-#    branches:
-#      - master
+  push:
+    branches:
+      - main
 
 env:
   PROJECT: dataflowops
