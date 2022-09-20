@@ -203,7 +203,6 @@ jobs:
               cluster=cluster_,
               execution_role_arn=exec_role,
               task_role_arn=task_role,
-              auto_deregister_task_definition=False,
           )
           ecs.save(block_, overwrite=True)
           EOF
@@ -266,7 +265,7 @@ jobs:
           -n ${{ env.PROJECT }} -q ${{ env.PROJECT }} -v $GITHUB_SHA -o $FLOW_NAME.yaml -a
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
           
-          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME \
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -sb s3/${{ env.BLOCK }} \
           -n ${{ env.PROJECT }}-local -q ${{ env.PROJECT }} -v $GITHUB_SHA -o $FLOW_NAME_local.yaml -a
 
       - name: Upload YAML deployment manifest as artifact

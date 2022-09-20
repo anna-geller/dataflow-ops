@@ -144,25 +144,25 @@ Resources:
                   - logs:GetLogEvents
                   - ec2:DescribeSubnets
                   - ec2:DescribeVpcs
-                  - ssm:GetParameters
-                  - ec2:AuthorizeSecurityGroupIngress
-                  - ec2:CreateSecurityGroup
-                  - ec2:CreateTags
-                  - ec2:DescribeNetworkInterfaces
-                  - ec2:DescribeSecurityGroups
-                  - ec2:DeleteSecurityGroup
-                  - ecs:CreateCluster
-                  - ecs:DeleteCluster
-                  - ecs:DescribeClusters
-                  - ecs:DescribeTaskDefinition
-                  - ecs:ListAccountSettings
-                  - ecs:ListClusters
-                  - ecs:ListTaskDefinitions
-                  - ecs:StopTask
-                  - iam:PassRole
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - logs:DescribeLogGroups
+#                  - ssm:GetParameters
+#                  - ec2:AuthorizeSecurityGroupIngress
+#                  - ec2:CreateSecurityGroup
+#                  - ec2:CreateTags
+#                  - ec2:DescribeNetworkInterfaces
+#                  - ec2:DescribeSecurityGroups
+#                  - ec2:DeleteSecurityGroup
+#                  - ecs:CreateCluster
+#                  - ecs:DeleteCluster
+#                  - ecs:DescribeClusters
+#                  - ecs:DescribeTaskDefinition
+#                  - ecs:ListAccountSettings
+#                  - ecs:ListClusters
+#                  - ecs:ListTaskDefinitions
+#                  - ecs:StopTask
+#                  - iam:PassRole
+#                  - logs:CreateLogStream
+#                  - logs:PutLogEvents
+#                  - logs:DescribeLogGroups
                 Resource: "*"
 
   PrefectTaskDefinition:
