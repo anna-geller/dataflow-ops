@@ -8,18 +8,12 @@ on:
 
 env:
   PROJECT: dataflowops
-  S3_BLOCK_NAME: prod
+  BLOCK: prod
   PREFECT_VERSION: 2.*
-  ECS_CLUSTER: prefect2
-  ECS_TASK_DEFINITION: task-definition.json
+  ECS_CLUSTER: prefect
+  AWS_REGION: 'us-east-1'
 
 jobs:
-  set_description:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
   changes:
     name: Summary of flow and code dependency changes
     runs-on: ubuntu-latest
@@ -38,8 +32,8 @@ jobs:
             flows:
               - added|modified: 'flows/*.py'
             code:
-              - added|modified|deleted: 'requirements.txt'
-              - added|modified|deleted: 'Dockerfile'
+              - added|modified: 'requirements.txt'
+              - added|modified: 'Dockerfile'
       - name: Generate Markdown Summary
         run: | 
           echo Flows: ${{ steps.filter.outputs.flows_files }} >> $GITHUB_STEP_SUMMARY
@@ -63,7 +57,6 @@ jobs:
       - name: Python dependencies
         run: |
           pip install -U prefect==$PREFECT_VERSION
-          pip install s3fs
           pip install .
 
       - name: Prefect Cloud login
@@ -76,23 +69,23 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
           mask-aws-account-id: 'no'
 
       - name: Deploy flows to S3
         id: build
-        run: | 
+        run: |
           FLOW_NAME=$(basename ${{ matrix.flows }} .py)
-          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name $PROJECT -q $PROJECT -a -sb s3/$S3_BLOCK_NAME -v $GITHUB_SHA -o $FLOW_NAME.yaml
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -ib ecs-task/$BLOCK -sb s3/$BLOCK -n $PROJECT -q $PROJECT -v $GITHUB_SHA -o $FLOW_NAME.yaml -a
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
 
-      - name: Upload deployment manifest as artifact
+      - name: Upload YAML deployment manifest as artifact
         uses: actions/upload-artifact@v3
         with:
           name: Deployment YAML manifests
           path: ${{ steps.build.outputs.flow_manifest }}
 
-  ecr-ecs-build:
+  ecr-ecs-block:
     needs: changes
     if: ${{ needs.changes.outputs.code_dependencies_changed == 'true' }}
     runs-on: ubuntu-latest
@@ -100,18 +93,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Python dependencies
+        run: |
+          pip install "prefect==$PREFECT_VERSION"
+          pip install prefect-aws
+          prefect block register -m prefect_aws.ecs
+
+      - name: Prefect Cloud login
+        run: |
+          prefect config set PREFECT_API_KEY=${{ secrets.PREFECT_API_KEY }}
+          prefect config set PREFECT_API_URL=${{ secrets.PREFECT_API_URL }}
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
           mask-aws-account-id: 'no'
-
-      - name: Add Secrets to SSM Parameter Store (needed for container in ECS task)
-        run: |
-          aws ssm put-parameter --type SecureString --name PREFECT_API_URL --value ${{ secrets.PREFECT_API_URL }} --overwrite
-          aws ssm put-parameter --type SecureString --name PREFECT_API_KEY --value ${{ secrets.PREFECT_API_KEY }} --overwrite
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -129,28 +133,15 @@ jobs:
 
       - name: Flow deployments finished
         run: echo "ECR image $ECR_REGISTRY/$PROJECT:$IMAGE_TAG built at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
-
-      - name: Fill in the new image ID in the Amazon ECS task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ${{ env.ECS_TASK_DEFINITION }}
-          container-name: ${{ env.PROJECT }}
-          image: ${{ steps.build-image.outputs.image }}
-
-      - name: Deploy Amazon ECS task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ env.ECS_CLUSTER }}/${{ env.PROJECT }}
-          cluster: ${{ env.ECS_CLUSTER }}
-          # wait-for-service-stability: true
-
-      - name: Upload task definition as artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ECS task definition
-          path: ${{ steps.task-def.outputs.task-definition }}
-
-      - name: Summary
-        run: echo 'Prefect agent on AWS ECS successfully redeployed! :rocket:' >> $GITHUB_STEP_SUMMARY
+      - name: Prefect ECS block
+        run: |
+          cat <<EOF > ecs_block.py
+          from prefect_aws.ecs import ECSTask
+          
+          block_ = "$BLOCK"
+          ecs = ECSTask.load(block_)
+          ecs.image = "${{ steps.build-image.outputs.image }}"
+          ecs.save(block_, overwrite=True)
+          
+          EOF
+          python ecs_block.py

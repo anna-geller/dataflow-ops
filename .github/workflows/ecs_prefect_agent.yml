@@ -124,7 +124,7 @@ jobs:
 
       - name: Generate task definition
         id: task-definition
-        run: aws ecs describe-task-definition --task-definition ${{ env.PROJECT }} --query taskDefinition > task-definition.json
+        run: aws ecs describe-task-definition --task-definition $PROJECT --query taskDefinition > task-definition.json
 
       - name: Upload task definition as artifact
         uses: actions/upload-artifact@v3
@@ -179,7 +179,7 @@ jobs:
           key_ = "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
           path_ = "${{ github.event.inputs.s3_path }}"
           img_ = "${{ needs.ecr-repo.outputs.image }}"
-          block_ = "${{ env.BLOCK }}"
+          block_ = "$BLOCK"
           cluster_ = "${{ env.ECS_CLUSTER }}"
           cpu_ = "${{ github.event.inputs.cpu }}"
           memory_ = "${{ github.event.inputs.memory }}"
@@ -240,8 +240,7 @@ jobs:
 
       - name: Python dependencies
         run: |
-          pip install -U "prefect==$PREFECT_VERSION"
-          pip install s3fs
+          pip install "prefect==$PREFECT_VERSION"
           pip install .
 
       - name: Prefect Cloud login
@@ -261,12 +260,9 @@ jobs:
         id: build
         run: |
           FLOW_NAME=$(basename ${{ matrix.flows }} .py)
-          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -ib ecs-task/${{ env.BLOCK }} -sb s3/${{ env.BLOCK }} \
-          -n ${{ env.PROJECT }} -q ${{ env.PROJECT }} -v $GITHUB_SHA -o $FLOW_NAME.yaml -a
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -n $PROJECT -o $FLOW_NAME.yaml -ib ecs-task/$BLOCK
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -n $PROJECT-local
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
-          
-          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -sb s3/${{ env.BLOCK }} \
-          -n ${{ env.PROJECT }}-local -q ${{ env.PROJECT }} -v $GITHUB_SHA -o $FLOW_NAME_local.yaml -a
 
       - name: Upload YAML deployment manifest as artifact
         uses: actions/upload-artifact@v3
