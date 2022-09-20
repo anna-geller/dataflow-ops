@@ -136,7 +136,7 @@ jobs:
         run: echo 'AWS ECS agent successfully deployed and ready to run your flows! :rocket:' >> $GITHUB_STEP_SUMMARY
 
   blocks:
-    name: Prefect Blocks
+    name: Prefect Blocks & S3 Upload
     runs-on: ubuntu-latest
     needs: ecr-repo
     steps:
@@ -150,8 +150,8 @@ jobs:
 
       - name: Python dependencies
         run: |
-          pip install -U "prefect==$PREFECT_VERSION"
-          pip install s3fs prefect-aws
+          pip install prefect==$PREFECT_VERSION
+          pip install .
           prefect block register -m prefect_aws.ecs
 
       - name: Prefect Cloud login
@@ -167,7 +167,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           mask-aws-account-id: 'no'
 
-      - name: Prefect Blocks
+      - name: Create Blocks & Upload to S3
         id: aws_ecs_ecs_blocks
         run: |
           export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
@@ -210,17 +210,21 @@ jobs:
       - name: Blocks creation finished
         run: echo "AWS and ECS blocks built at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
 
+      - name: Upload to S3 - maintenance flow
+        id: maintenance
+        run: prefect deployment build utilities/maintenance.py -n $PROJECT -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -t maintenance
+
   list-flows:
     name: List Prefect flows
     runs-on: ubuntu-latest
     needs: blocks
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      prefect_flows: ${{ steps.set-matrix.outputs.prefect_flows }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - id: set-matrix
-        run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
+        run: echo "::set-output name=prefect_flows::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
 
   deploy:
     name: Deploy
@@ -228,7 +232,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        flows: ${{ fromJson(needs.list-flows.outputs.matrix) }}
+        flows: ${{ fromJson(needs.list-flows.outputs.prefect_flows) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -240,7 +244,7 @@ jobs:
 
       - name: Python dependencies
         run: |
-          pip install "prefect==$PREFECT_VERSION"
+          pip install prefect==$PREFECT_VERSION
           pip install .
 
       - name: Prefect Cloud login
@@ -260,8 +264,8 @@ jobs:
         id: build
         run: |
           FLOW_NAME=$(basename ${{ matrix.flows }} .py)
-          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -n $PROJECT -o $FLOW_NAME.yaml -ib ecs-task/$BLOCK
-          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -n $PROJECT-local
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -t $PROJECT -n $PROJECT -o $FLOW_NAME.yaml -ib ecs-task/$BLOCK --skip-upload
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -t $PROJECT -n $PROJECT-local --skip-upload
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
 
       - name: Upload YAML deployment manifest as artifact

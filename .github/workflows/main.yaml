@@ -14,6 +14,39 @@ env:
   AWS_REGION: 'us-east-1'
 
 jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Python dependencies
+        run: |
+          pip install prefect==$PREFECT_VERSION
+          pip install .
+
+      - name: Prefect Cloud login
+        run: |
+          prefect config set PREFECT_API_KEY=${{ secrets.PREFECT_API_KEY }} 
+          prefect config set PREFECT_API_URL=${{ secrets.PREFECT_API_URL }}
+
+      - name: AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: 'no'
+
+      - name: Upload to S3 - maintenance flow
+        id: maintenance
+        run: prefect deployment build utilities/maintenance.py -n $PROJECT -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -t maintenance
+
   changes:
     name: Code & dependency changes
     runs-on: ubuntu-latest
@@ -25,7 +58,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Generate Markdown Summary
-        run: echo "Workflow $GITHUB_WORKFLOW with GITHUB_SHA $GITHUB_SHA" >> $GITHUB_STEP_SUMMARY
+        run: echo "Starting CI/CD for flows and dependencies added/modified with commit $GITHUB_SHA" >> $GITHUB_STEP_SUMMARY
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -59,7 +92,7 @@ jobs:
 
       - name: Python dependencies
         run: |
-          pip install -U prefect==$PREFECT_VERSION
+          pip install prefect==$PREFECT_VERSION
           pip install .
 
       - name: Prefect Cloud login
@@ -79,7 +112,8 @@ jobs:
         id: build
         run: |
           FLOW_NAME=$(basename ${{ matrix.flows }} .py)
-          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -ib ecs-task/$BLOCK -sb s3/$BLOCK -n $PROJECT -q $PROJECT -v $GITHUB_SHA -o $FLOW_NAME.yaml -a
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -t $PROJECT -n $PROJECT -o $FLOW_NAME.yaml -ib ecs-task/$BLOCK --skip-upload
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -t $PROJECT -n $PROJECT-local --skip-upload
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
 
       - name: Upload YAML deployment manifest as artifact
@@ -103,7 +137,7 @@ jobs:
 
       - name: Python dependencies
         run: |
-          pip install "prefect==$PREFECT_VERSION"
+          pip install prefect==$PREFECT_VERSION
           pip install prefect-aws
           prefect block register -m prefect_aws.ecs
 

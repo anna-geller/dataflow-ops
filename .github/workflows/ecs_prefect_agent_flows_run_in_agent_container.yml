@@ -55,7 +55,7 @@ jobs:
 
       - name: Python dependencies
         run: |
-          pip install -U "prefect==$PREFECT_VERSION"
+          pip install prefect==$PREFECT_VERSION
           pip install s3fs
 
       - name: Prefect Cloud login
@@ -111,7 +111,7 @@ jobs:
 
       - name: Python dependencies
         run: |
-          pip install -U "prefect==$PREFECT_VERSION"
+          pip install prefect==$PREFECT_VERSION
           pip install s3fs
           pip install .
 
