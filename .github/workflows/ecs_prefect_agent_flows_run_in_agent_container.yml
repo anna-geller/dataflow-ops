@@ -1,4 +1,4 @@
-name: (Optional) ECS Prefect agent (running all flows in agent container to minimize latency)
+name: (optional) ECS Prefect agent running all flows in agent container to minimize latency
 
 on:
   workflow_dispatch:
