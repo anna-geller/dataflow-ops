@@ -1,4 +1,4 @@
-name: 3 Delete ECS Cluster, Prefect agent and ECR repository
+name: 3 Delete ECS Cluster, Prefect agent ECS service and ECR repository
 
 on:
   workflow_dispatch:

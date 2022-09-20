@@ -1,4 +1,4 @@
-name: (optional) Simple CD to S3 and Prefect Cloud
+name: (optional) Simple CD to S3 and Prefect Cloud w/o redeploying ECR image
 
 on:
   workflow_dispatch:

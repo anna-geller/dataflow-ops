@@ -1,4 +1,4 @@
-name: 2 Regular CD to AWS ECS, S3 and Prefect Cloud
+name: 2 CD to AWS ECS, S3 and Prefect Cloud (Regular automated process)
 
 on:
   workflow_dispatch:

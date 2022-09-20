@@ -1,4 +1,4 @@
-name: 1 Initial - Deploy Prefect agent to ECS
+name: 1 Initial - ECS Prefect agent
 
 on:
   workflow_dispatch:

@@ -1,4 +1,4 @@
-name: (Optional) 1 Initial - Deploy Prefect agent to ECS (running all flows in agent container to minimize latency)
+name: (Optional) ECS Prefect agent (running all flows in agent container to minimize latency)
 
 on:
   workflow_dispatch:

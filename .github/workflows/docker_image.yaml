@@ -1,4 +1,4 @@
-name: (optional) DockerHub public image
+name: (optional) DockerHub image
 
 on:
   workflow_dispatch:
