@@ -76,7 +76,7 @@ jobs:
         run: prefect deployment build utilities/maintenance.py:maintenance -n $PROJECT -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -t maintenance --interval 10
 
   deploy:
-    needs: changes
+    needs: [changes, maintenance]
     if: ${{ needs.changes.outputs.prefect_flows_changed == 'true' }}
     runs-on: ubuntu-latest
     strategy:
