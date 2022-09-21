@@ -14,8 +14,36 @@ env:
   AWS_REGION: 'us-east-1'
 
 jobs:
+  changes:
+    name: Code & dependency changes
+    runs-on: ubuntu-latest
+    outputs:
+      prefect_flows: ${{ steps.filter.outputs.flows_files }}
+      prefect_flows_changed: ${{ steps.filter.outputs.flows }}
+      code_dependencies_changed: ${{ steps.filter.outputs.code }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Generate Markdown Summary
+        run: echo "Starting CI/CD for flows and dependencies added/modified with commit $GITHUB_SHA" >> $GITHUB_STEP_SUMMARY
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          list-files: json
+          filters: |
+            flows:
+              - added|modified: 'flows/*.py'
+            code:
+              - added|modified: 'requirements.txt'
+              - added|modified: 'Dockerfile'
+      - name: Generate Markdown Summary
+        run: | 
+          echo Flows: ${{ steps.filter.outputs.flows_files }} >> $GITHUB_STEP_SUMMARY
+          echo Code dependency changes: ${{ steps.filter.outputs.code_files }} >> $GITHUB_STEP_SUMMARY
   maintenance:
     runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.prefect_flows_changed == 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -46,33 +74,6 @@ jobs:
       - name: Upload to S3 - maintenance flow
         id: maintenance
         run: prefect deployment build utilities/maintenance.py:maintenance -n $PROJECT -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -t maintenance --interval 10
-
-  changes:
-    name: Code & dependency changes
-    runs-on: ubuntu-latest
-    outputs:
-      prefect_flows: ${{ steps.filter.outputs.flows_files }}
-      prefect_flows_changed: ${{ steps.filter.outputs.flows }}
-      code_dependencies_changed: ${{ steps.filter.outputs.code }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Generate Markdown Summary
-        run: echo "Starting CI/CD for flows and dependencies added/modified with commit $GITHUB_SHA" >> $GITHUB_STEP_SUMMARY
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          list-files: json
-          filters: |
-            flows:
-              - added|modified: 'flows/*.py'
-            code:
-              - added|modified: 'requirements.txt'
-              - added|modified: 'Dockerfile'
-      - name: Generate Markdown Summary
-        run: | 
-          echo Flows: ${{ steps.filter.outputs.flows_files }} >> $GITHUB_STEP_SUMMARY
-          echo Code dependency changes: ${{ steps.filter.outputs.code_files }} >> $GITHUB_STEP_SUMMARY
 
   deploy:
     needs: changes
