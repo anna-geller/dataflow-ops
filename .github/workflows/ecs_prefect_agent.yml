@@ -212,7 +212,7 @@ jobs:
 
       - name: Upload to S3 - maintenance flow
         id: maintenance
-        run: prefect deployment build utilities/maintenance.py -n $PROJECT -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -t maintenance
+        run: prefect deployment build utilities/maintenance.py:maintenance -n $PROJECT -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -t maintenance --interval 10
 
   list-flows:
     name: List Prefect flows
