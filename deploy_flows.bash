@@ -7,7 +7,7 @@ prefect deployment build -n prod -q prod -sb s3/prod -ib process/prod -a flows/h
 
 # upload flow code to S3 storage block + deploy flow as ECSTask infra block
 python blocks/s3.py
-python blocks/docker.py
+python blocks/ecs_task.py
 prefect deployment build -n prod -q prod -sb s3/prod -ib ecs-task/prod -a flows/healthcheck.py:healthcheck
 prefect deployment build -n prod -q prod -sb s3/prod -ib ecs-task/prod -a flows/parametrized.py:parametrized --skip-upload
 prefect deployment build -n prod -q prod -sb s3/prod -ib ecs-task/prod -a flows/hello.py:hello --skip-upload
