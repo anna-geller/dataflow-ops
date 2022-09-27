@@ -1,16 +1,23 @@
 # Template for Prefect deployments with Continuous Deployment GitHub Actions workflow and one-click agent deployment
 
-The goal of this recipe is to have one Prefect agent (running on AWS ECS Fargate) with shared core package dependencies per project. This means that:
+The goal of this repository template is to make it easy for you to get started with Prefect. Ideally, you should be able to:
 
-- the pip packages such as pandas, numpy, scikit learn etc. are baked into an ECR image and this image gets used to deploy an agent process
-- the flow deployments can have custom module dependencies which are packaged alongside flow code to S3
-- the flow deployments are created automatically from CI/CD but they can also be created from your local machine and this will work the same way
-
-
-Make sure to adjust your AWS account ID and your default region in the ``task-definition.json`` file.
+1. Clone this repository, or create your own repository from this template
+2. Configure GitHub Actions secrets (AWS credentials and Prefect Cloud v2 API key)
+3. Start the GitHub Actions workflow defined in [this YAML file](.github/workflows/ecs_prefect_agent.yml) 
 
 
-# Deployment CLI examples based on your platform, storage and infrastructure
+For more detailed usage, check out [this blog post](https://towardsdatascience.com/prefect-aws-ecs-fargate-github-actions-make-serverless-dataflows-as-easy-as-py-f6025335effc) and [this video demo](https://youtu.be/Eemq2X9XrlE).
+
+## Questions?
+
+If you have any questions or issue using this template, feel free to open a GitHub issues directly on this repo, or reach out via [Discourse](https://discourse.prefect.io/) or [Slack](https://prefect.io/slack)
+
+![](utilities/img.jpeg)
+
+
+
+## **Extra**: additional deployment CLI examples based on your platform, storage and infrastructure (_not only related to AWS_)
 
 <details>
   <summary>Table with examples</summary>
