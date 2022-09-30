@@ -21,6 +21,6 @@ ecs = ECSTask(
     configure_cloudwatch_logs=True,
     cluster="prefect",
     execution_role_arn="arn:aws:iam::123456789:role/dataflowops_ecs_execution_role",
-    task_role_arn="arn:aws:iam::123456789:role/dataflowops_ecs_execution_role",
+    task_role_arn="arn:aws:iam::123456789:role/dataflowops_ecs_task_role",
 )
 ecs.save("prod", overwrite=True)
