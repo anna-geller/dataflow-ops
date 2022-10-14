@@ -50,6 +50,7 @@ jobs:
     strategy:
       matrix:
         flows: ${{ fromJson(needs.changes.outputs.prefect_flows) }}
+      fail-fast: false
     steps:
       - name: Checkout
         uses: actions/checkout@v3
