@@ -1,5 +1,5 @@
 import asyncio
-from prefect.client import get_client
+from prefect import get_client
 
 
 async def remove_all_deployments():

@@ -65,6 +65,9 @@ ecs_task_block = ECSTask(
 )
 ```
 
+Other possible patches you could apply:
+- /containerDefinitions/logConfiguration/logDriver
+
 
 ## When to use `add` vs `replace` operator?
 

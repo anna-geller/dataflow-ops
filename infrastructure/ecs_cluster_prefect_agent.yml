@@ -165,6 +165,10 @@ Resources:
           Environment:
             - Name: PREFECT_LOGGING_LEVEL
               Value: INFO
+            - Name: AWS_RETRY_MODE
+              Value: adaptive
+            - Name: AWS_MAX_ATTEMPTS
+              Value: 10
           Command:
             - !Sub "prefect agent start -q ${project}"
           LogConfiguration:

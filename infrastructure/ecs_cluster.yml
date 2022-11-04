@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Creates a new ECS Cluster
+
+Parameters:
+  cluster:
+    Type: String
+    Description: Cluster name
+    Default: prefect
+
+Resources:
+  PrefectFargateCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Ref cluster
