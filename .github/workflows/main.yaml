@@ -115,7 +115,7 @@ jobs:
           FLOW_NAME=$(basename ${{ matrix.flows }} .py)
           prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -t $PROJECT -n $PROJECT -o $FLOW_NAME.yaml -ib ecs-task/$BLOCK --skip-upload
           prefect deployment build ${{ matrix.flows }}:$FLOW_NAME -sb s3/$BLOCK -q $PROJECT -v $GITHUB_SHA -a -t $PROJECT -n $PROJECT-local --skip-upload
-          echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
+          echo "flow_manifest=$FLOW_NAME.yaml" >> $GITHUB_OUTPUT
 
       - name: Upload YAML deployment manifest as artifact
         uses: actions/upload-artifact@v3
@@ -165,12 +165,14 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$PROJECT:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$PROJECT:$IMAGE_TAG
-          echo "::set-output name=image::$ECR_REGISTRY/$PROJECT:$IMAGE_TAG"
+          export IMAGE="$ECR_REGISTRY/$PROJECT:$IMAGE_TAG"
+          docker build -t $IMAGE .
+          docker push $IMAGE
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
 
       - name: Flow deployments finished
         run: echo "ECR image $ECR_REGISTRY/$PROJECT:$IMAGE_TAG built at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
+
       - name: Prefect ECS block
         run: |
           cat <<EOF > ecs_block.py

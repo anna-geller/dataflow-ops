@@ -83,7 +83,7 @@ jobs:
         run: | 
           FLOW_NAME=$(basename ${{ matrix.flows }} .py)
           prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name $PROJECT -q $PROJECT -a -sb s3/$S3_BLOCK_NAME -v $GITHUB_SHA -o $FLOW_NAME.yaml
-          echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
+          echo "flow_manifest=$FLOW_NAME.yaml" >> $GITHUB_OUTPUT
 
       - name: Upload deployment manifest as artifact
         uses: actions/upload-artifact@v3
