@@ -11,6 +11,10 @@ Ideally, you should be able to:
 
 For more detailed usage, check out [this blog post](https://towardsdatascience.com/prefect-aws-ecs-fargate-github-actions-make-serverless-dataflows-as-easy-as-py-f6025335effc) and [this video demo](https://youtu.be/Eemq2X9XrlE).
 
+## Note about S3 bucket
+
+In this tutorial, I'm using a private bucket named ``prefect-orion``. You need to create your own bucket and add your bucket name to the required GitHub Actions workflow fields. 
+
 ## Note about the agent
 
 When you start a Prefect agent on AWS ECS Fargate, allocate as much [CPU and memory](https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html#fargate-tasks-size) as needed for your workloads. Your agent needs enough resources to appropriately provision infrastructure for your flow runs and to monitor its execution. Otherwise, your flow runs may [get stuck](https://github.com/PrefectHQ/prefect-aws/issues/156#issuecomment-1320748748) in a `Pending` state.
