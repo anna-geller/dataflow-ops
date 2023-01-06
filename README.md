@@ -11,6 +11,12 @@ Ideally, you should be able to:
 
 For more detailed usage, check out [this blog post](https://towardsdatascience.com/prefect-aws-ecs-fargate-github-actions-make-serverless-dataflows-as-easy-as-py-f6025335effc) and [this video demo](https://youtu.be/Eemq2X9XrlE).
 
+## Note about ``containerDefinitions``
+
+If setting a `task_definition`, `containerDefinitions`.name must be `prefect`. 
+Otherwise, the new registered task definition will contain two separate containerDefinitions items and runs will fail.
+
+
 ## Note about S3 bucket
 
 In this tutorial, I'm using a private bucket named ``prefect-orion``. You need to create your own bucket and add your bucket name to the required GitHub Actions workflow fields. 
