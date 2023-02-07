@@ -1,4 +1,4 @@
-s3fs
-prefect-aws
-sqlalchemy
-pandas
+s3fs==2022.11.0
+prefect-aws==0.1.8
+sqlalchemy==1.4.44
+pandas==1.5.2
