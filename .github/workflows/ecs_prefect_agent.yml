@@ -36,7 +36,7 @@ on:
 
 env:
   PROJECT: dataflowops
-  ECS_CLUSTER: prefect
+  ECS_CLUSTER: dataflowops
   BLOCK: ${{ github.event.inputs.block_name }}
   AWS_REGION: ${{ github.event.inputs.aws-region }}
   PREFECT_VERSION: ${{ github.event.inputs.prefect-version }}
@@ -61,7 +61,7 @@ jobs:
           mask-aws-account-id: 'no'
 
       - name: Create new ECR repository using AWS CloudFormation
-        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        uses: aws-actions/aws-cloudformation-github-deploy@v1.1.0
         with:
           name: "${{ env.PROJECT }}-ecr"
           template: infrastructure/ecr_repository.yml
@@ -115,7 +115,7 @@ jobs:
 #          echo ::set-output name=accountid::$AWS_ACCOUNT_ID
 
       - name: Deploy to ECS with AWS CloudFormation
-        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        uses: aws-actions/aws-cloudformation-github-deploy@v1.1.0
         with:
           name: ${{ env.PROJECT }}
           template: infrastructure/ecs_cluster_prefect_agent.yml
