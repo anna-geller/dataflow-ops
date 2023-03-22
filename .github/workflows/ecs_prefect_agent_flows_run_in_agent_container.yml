@@ -158,7 +158,7 @@ jobs:
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
           name: "${{ env.PROJECT }}-ecr"
-          template: infrastructure/create_ecr_repository.yml
+          template: infrastructure/ecr_repository.yml
           parameter-overrides: "RepositoryName=${{ env.PROJECT }}"
           no-fail-on-empty-changeset: "1"
       - name: Flow deployment finished
