@@ -1,4 +1,6 @@
-# Template for Prefect deployments with Continuous Deployment GitHub Actions workflow and one-click agent deployment
+# Deprecated: Template for Prefect deployments with GitHub Actions workflows and one-click agent deployment
+
+> ⚠️ This repository is no longer maintained. I encourage you to fork this repository and make the necessary adjustments this way.
 
 The goal of this repository template is to make it easy for you to get started with Prefect. 
 
